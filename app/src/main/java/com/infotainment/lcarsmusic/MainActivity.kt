@@ -1,9 +1,11 @@
 package com.infotainment.lcarsmusic
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -16,6 +18,7 @@ import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +49,29 @@ class MainActivity : AppCompatActivity() {
     // Media Browser and Controller
     private lateinit var mediaBrowser: MediaBrowserCompat
     private var mediaController: MediaControllerCompat? = null
+    private var isActivityForeground = false
+    private var latestVisualizerSessionId = 0
+    private var isScreenReceiverRegistered = false
+
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> {
+                    Log.d(MusicPlaybackService.VISUALIZER_LOG_TAG, "SCREEN_OFF_PAUSE_VISUALIZER")
+                    visualizerView.pause()
+                }
+                Intent.ACTION_SCREEN_ON -> {
+                    Log.d(
+                        MusicPlaybackService.VISUALIZER_LOG_TAG,
+                        "SCREEN_ON_RESUME_VISUALIZER foreground=$isActivityForeground sessionId=$latestVisualizerSessionId"
+                    )
+                    if (isActivityForeground) {
+                        visualizerView.resume()
+                    }
+                }
+            }
+        }
+    }
 
     private val progressHandler = Handler(Looper.getMainLooper())
     private val progressRunnable = object : Runnable {
@@ -85,6 +111,13 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
+        val hasRecordAudio = permissions[Manifest.permission.RECORD_AUDIO]
+            ?: hasRecordAudioPermission()
+        Log.d(
+            MusicPlaybackService.VISUALIZER_LOG_TAG,
+            "PERMISSION_RESULT_RECORD_AUDIO granted=$hasRecordAudio"
+        )
+
         if (permissions.all { it.value }) {
             initializeContent()
         } else {
@@ -108,6 +141,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         initUI()
+        registerScreenStateReceiver()
         checkPermissions()
     }
     
@@ -131,6 +165,11 @@ class MainActivity : AppCompatActivity() {
 
     private val mediaControllerCallback = object : MediaControllerCompat.Callback() {
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            val sessionId = state?.extras?.getInt(MusicPlaybackService.EXTRA_AUDIO_SESSION_ID, 0) ?: 0
+            if (sessionId > 0) {
+                handleVisualizerAudioSession(sessionId, "playback_state")
+            }
+
             val playPauseBtn = findViewById<ImageButton>(R.id.btn_play_pause)
             if (state?.state == PlaybackStateCompat.STATE_PLAYING) {
                 playPauseBtn.setImageResource(android.R.drawable.ic_media_pause)
@@ -176,6 +215,11 @@ class MainActivity : AppCompatActivity() {
                 val album = it.getString(MediaMetadataCompat.METADATA_KEY_ALBUM)
                 val playlist = it.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE)
                 val duration = it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                val sessionId = it.getLong(MusicPlaybackService.EXTRA_AUDIO_SESSION_ID).toInt()
+
+                if (sessionId > 0) {
+                    handleVisualizerAudioSession(sessionId, "metadata")
+                }
 
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_song_title).text = title?.uppercase()
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_artist_name).text = artist?.uppercase()
@@ -306,6 +350,11 @@ class MainActivity : AppCompatActivity() {
         val missingPermissions = permissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
+        val hasRecordAudio = hasRecordAudioPermission()
+        Log.d(
+            MusicPlaybackService.VISUALIZER_LOG_TAG,
+            "PERMISSION_CHECK_RECORD_AUDIO granted=$hasRecordAudio"
+        )
 
         if (missingPermissions.isEmpty()) {
             initializeContent()
@@ -330,6 +379,58 @@ class MainActivity : AppCompatActivity() {
             switchView("NOW PLAYING")
             startClock()
         }
+    }
+
+    private fun hasRecordAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun handleVisualizerAudioSession(sessionId: Int, source: String) {
+        Log.d(
+            MusicPlaybackService.VISUALIZER_LOG_TAG,
+            "UI_CAPTURED_AUDIO_SESSION_ID source=$source sessionId=$sessionId latest=$latestVisualizerSessionId"
+        )
+
+        latestVisualizerSessionId = sessionId
+
+        if (!hasRecordAudioPermission()) {
+            Log.d(
+                MusicPlaybackService.VISUALIZER_LOG_TAG,
+                "VISUALIZER_SETUP_SKIPPED_MISSING_RECORD_AUDIO source=$source sessionId=$sessionId"
+            )
+            return
+        }
+
+        if (visualizerView.activeSessionId == sessionId) {
+            Log.d(
+                MusicPlaybackService.VISUALIZER_LOG_TAG,
+                "VISUALIZER_SETUP_SKIPPED_DUPLICATE_SESSION source=$source sessionId=$sessionId"
+            )
+            return
+        }
+
+        visualizerView.setAudioSessionId(sessionId)
+    }
+
+    private fun registerScreenStateReceiver() {
+        if (isScreenReceiverRegistered) return
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        registerReceiver(screenStateReceiver, filter)
+        isScreenReceiverRegistered = true
+    }
+
+    private fun unregisterScreenStateReceiver() {
+        if (!isScreenReceiverRegistered) return
+
+        unregisterReceiver(screenStateReceiver)
+        isScreenReceiverRegistered = false
     }
 
     private fun setupNavigation() {
@@ -670,16 +771,28 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        isActivityForeground = true
+        Log.d(
+            MusicPlaybackService.VISUALIZER_LOG_TAG,
+            "ACTIVITY_FOREGROUND_RESUME_VISUALIZER sessionId=$latestVisualizerSessionId"
+        )
         visualizerView.resume()
     }
 
     override fun onPause() {
         super.onPause()
+        isActivityForeground = false
+        Log.d(
+            MusicPlaybackService.VISUALIZER_LOG_TAG,
+            "ACTIVITY_BACKGROUND_PAUSE_VISUALIZER sessionId=$latestVisualizerSessionId"
+        )
         visualizerView.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         timeHandler.removeCallbacks(timeRunnable)
+        unregisterScreenStateReceiver()
+        visualizerView.release()
     }
 }

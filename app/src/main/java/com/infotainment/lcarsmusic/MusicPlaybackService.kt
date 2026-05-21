@@ -14,6 +14,7 @@ import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.app.NotificationCompat as MediaNotificationCompat
@@ -33,6 +34,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     
     private lateinit var mediaSession: MediaSessionCompat
     private var currentPlayingUri: Uri? = null
+    private var latestAudioSessionId: Int = 0
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -160,6 +162,11 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                 mediaPlayer?.setDataSource(this, song.uri)
                 mediaPlayer?.prepare()
                 currentPlayingUri = song.uri
+                latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
+                Log.d(
+                    VISUALIZER_LOG_TAG,
+                    "SERVICE_CAPTURED_AUDIO_SESSION_ID sessionId=$latestAudioSessionId title=${song.title}"
+                )
                 updateMetadata(song, MediaRepository.playlistName)
                 updatePlaybackState(targetState)
                 if (persist) {
@@ -361,7 +368,12 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "UNKNOWN ALBUM")
                 .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, playlist)
                 .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration)
+                .putLong(EXTRA_AUDIO_SESSION_ID, latestAudioSessionId.toLong())
                 .build()
+        )
+        Log.d(
+            VISUALIZER_LOG_TAG,
+            "SERVICE_PUBLISHED_METADATA_AUDIO_SESSION_ID sessionId=$latestAudioSessionId"
         )
     }
 
@@ -384,6 +396,9 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun updatePlaybackState(state: Int) {
+        val extras = Bundle().apply {
+            putInt(EXTRA_AUDIO_SESSION_ID, latestAudioSessionId)
+        }
         val builder = PlaybackStateCompat.Builder()
             .setActions(
                 PlaybackStateCompat.ACTION_PLAY or
@@ -396,9 +411,14 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                         PlaybackStateCompat.ACTION_SET_REPEAT_MODE
             )
             .setState(state, mediaPlayer?.currentPosition?.toLong() ?: 0L, 1.0f)
+            .setExtras(extras)
         mediaSession.setPlaybackState(builder.build())
         mediaSession.setShuffleMode(MediaRepository.shuffleMode)
         mediaSession.setRepeatMode(MediaRepository.repeatMode)
+        Log.d(
+            VISUALIZER_LOG_TAG,
+            "SERVICE_PUBLISHED_PLAYBACK_STATE_AUDIO_SESSION_ID sessionId=$latestAudioSessionId state=$state"
+        )
     }
 
     private fun updateNotification() {
@@ -432,5 +452,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         const val ACTION_NEXT = "com.infotainment.lcarsmusic.ACTION_NEXT"
         const val ACTION_STOP = "com.infotainment.lcarsmusic.ACTION_STOP"
         const val ACTION_REHYDRATE = "com.infotainment.lcarsmusic.ACTION_REHYDRATE"
+        const val EXTRA_AUDIO_SESSION_ID = "com.infotainment.lcarsmusic.EXTRA_AUDIO_SESSION_ID"
+        const val VISUALIZER_LOG_TAG = "LCARS_VISUALIZER"
     }
 }
