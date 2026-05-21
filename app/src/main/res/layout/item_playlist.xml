@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@android:drawable/ic_menu_save"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="FOLDER ICON" />
+
+    <TextView
+        android:id="@+id/tv_playlist_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FOLDER NAME"
+        android:textAllCaps="true"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp" />
+
+</LinearLayout>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        Custom attributes for SegmentedSeekBar.
+        Use the "ssb_" prefix in XML layouts:
+            app:ssb_progress="75"
+            app:ssb_activeColor="#04AA6D"
+    -->
+    <declare-styleable name="SegmentedSeekBar">
+
+        <!-- Initial progress value (0.0 – 100.0). Default: 50 -->
+        <attr name="ssb_progress" format="float"/>
+
+        <!-- Number of visible segments including the two rounded-cap ends. Default: 12 -->
+        <attr name="ssb_segmentCount" format="integer"/>
+
+        <!-- Color of the filled (active) portion of the track. Default: #04AA6D -->
+        <attr name="ssb_activeColor" format="color"/>
+
+        <!-- Color of the unfilled (inactive) portion of the track. Default: #1A3D2A -->
+        <attr name="ssb_inactiveColor" format="color"/>
+
+        <!-- Color of the thumb indicator line. Default: #FFFFFF -->
+        <attr name="ssb_thumbColor" format="color"/>
+
+    </declare-styleable>
+
+</resources>

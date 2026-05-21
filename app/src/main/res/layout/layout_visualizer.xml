@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#111111">
+
+    <!-- Custom Visualizer View -->
+    <com.infotainment.lcarsmusic.LcarsVisualizerView
+        android:id="@+id/visualizer_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/btn_toggle_visualizer_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:text="TOGGLE MODE"
+        android:textAllCaps="true" />
+
+</FrameLayout>

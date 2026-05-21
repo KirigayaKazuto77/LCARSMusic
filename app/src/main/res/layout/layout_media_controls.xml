@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="#1A1A1A">
+
+    <!-- Seek Bar Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_playback_time"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="00:00"
+            android:textColor="#FFFFFF" />
+
+        <SeekBar
+            android:id="@+id/playback_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp" />
+
+        <TextView
+            android:id="@+id/tv_track_duration"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="00:00"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Controls Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btn_shuffle"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="SHUFFLE"
+            android:src="@android:drawable/ic_menu_directions"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <ImageButton
+            android:id="@+id/btn_previous"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="PREVIOUS"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <ImageButton
+            android:id="@+id/btn_play_pause"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:contentDescription="PLAY PAUSE"
+            android:src="@android:drawable/ic_media_play"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <ImageButton
+            android:id="@+id/btn_next"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="NEXT"
+            android:src="@android:drawable/ic_media_next"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <ImageButton
+            android:id="@+id/btn_loop"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="LOOP"
+            android:src="@android:drawable/ic_menu_rotate"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+    </LinearLayout>
+
+    <!-- Volume and Power Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VOL"
+            android:textAllCaps="true"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp"/>
+
+        <SeekBar
+            android:id="@+id/volume_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp" />
+
+        <Button
+            android:id="@+id/btn_power"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="POWER"
+            android:textAllCaps="true"
+            android:backgroundTint="#AA0000"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="16dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
