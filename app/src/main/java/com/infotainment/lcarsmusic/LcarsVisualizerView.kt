@@ -27,7 +27,9 @@ class LcarsVisualizerView @JvmOverloads constructor(
     private var waveformData: ByteArray? = null
     private var fftData: ByteArray? = null
     private var isPaused = false
+    private var isPlaybackActive = false
     private var isDecayingToZero = false
+    private var isResting = false
     private var decayAnimator: ValueAnimator? = null
 
     var activeSessionId: Int = 0
@@ -83,7 +85,9 @@ class LcarsVisualizerView @JvmOverloads constructor(
 
     fun resume() {
         isPaused = false
-        cancelDecayAnimation()
+        if (isPlaybackActive) {
+            cancelDecayAnimation()
+        }
         Log.d(TAG, "VIEW_RESUME_VISUALIZER sessionId=$activeSessionId")
 
         if (activeSessionId > 0 && hasRecordAudioPermission()) {
@@ -100,6 +104,19 @@ class LcarsVisualizerView @JvmOverloads constructor(
         Log.d(TAG, "VIEW_RELEASE_VISUALIZER sessionId=$activeSessionId")
         cancelDecayAnimation()
         releaseVisualizer(clearSession = true)
+    }
+
+    fun onPlaybackResumed() {
+        isPlaybackActive = true
+        isResting = false
+        cancelDecayAnimation()
+        visualizer?.enabled = true
+    }
+
+    fun onPlaybackPaused() {
+        isPlaybackActive = false
+        visualizer?.enabled = false
+        animateToZero()
     }
 
     fun animateToZero() {
@@ -134,6 +151,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
                     if (!wasCanceled) {
                         fftData?.fill(0)
                         waveformData?.fill(WAVEFORM_CENTER.toByte())
+                        isResting = true
                         invalidate()
                     }
 
@@ -170,7 +188,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
                         waveform: ByteArray?,
                         samplingRate: Int
                     ) {
-                        if (isDecayingToZero) return
+                        if (isDecayingToZero || isResting) return
 
                         Log.d(
                             TAG,
@@ -188,7 +206,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
                         fft: ByteArray?,
                         samplingRate: Int
                     ) {
-                        if (isDecayingToZero) return
+                        if (isDecayingToZero || isResting) return
 
                         Log.d(
                             TAG,
@@ -205,7 +223,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
                 true,
                 true
             )
-            nativeVisualizer.enabled = true
+            nativeVisualizer.enabled = isPlaybackActive
             visualizer = nativeVisualizer
 
             Log.d(TAG, "VISUALIZER_INITIALIZATION_SUCCESS sessionId=$sessionId enabled=${nativeVisualizer.enabled}")
@@ -272,6 +290,8 @@ class LcarsVisualizerView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (isResting) return
+
         super.onDraw(canvas)
         when (mode) {
             Mode.FREQUENCY_DOMAIN -> drawFft(canvas)
@@ -334,6 +354,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
     }
 
     private fun cancelDecayAnimation() {
+        isResting = false
         isDecayingToZero = false
         decayAnimator?.cancel()
         decayAnimator = null

@@ -187,8 +187,15 @@ class MainActivity : AppCompatActivity() {
                 handleVisualizerAudioSession(sessionId, "playback_state")
             }
 
-            if (state?.state == PlaybackStateCompat.STATE_PAUSED) {
-                visualizerView.animateToZero()
+            when (state?.state) {
+                PlaybackStateCompat.STATE_PLAYING -> {
+                    if (currentVisualizerMode != VisualizerMode.OFF) {
+                        visualizerView.onPlaybackResumed()
+                    }
+                }
+                PlaybackStateCompat.STATE_PAUSED -> {
+                    visualizerView.onPlaybackPaused()
+                }
             }
 
             val playPauseBtn = findViewById<ImageButton>(R.id.btn_play_pause)
@@ -352,7 +359,7 @@ class MainActivity : AppCompatActivity() {
 
         when (mode) {
             VisualizerMode.OFF -> {
-                visualizerView.animateToZero()
+                visualizerView.onPlaybackPaused()
                 visualizerView.pause()
             }
             VisualizerMode.FREQUENCY_DOMAIN -> {
@@ -481,6 +488,10 @@ class MainActivity : AppCompatActivity() {
             hasRecordAudioPermission()
         ) {
             visualizerView.setAudioSessionId(latestVisualizerSessionId)
+        }
+
+        if (mediaController?.playbackState?.state == PlaybackStateCompat.STATE_PLAYING) {
+            visualizerView.onPlaybackResumed()
         }
     }
 
