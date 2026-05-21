@@ -57,7 +57,12 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         override fun onPlay() {
-            val song = MediaRepository.getCurrentSong()
+            var song = MediaRepository.getCurrentSong()
+            if (song == null && MediaRepository.currentQueue.isNotEmpty()) {
+                MediaRepository.currentQueueIndex = 0
+                song = MediaRepository.getCurrentSong()
+            }
+
             if (song != null) {
                 if (song.uri == currentPlayingUri && mediaPlayer != null) {
                     // Resume existing track
@@ -70,7 +75,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                     startPreparedSong()
                 }
             } else {
-                handlePlayAction()
+                handleEmptyPlayRequest()
             }
         }
 
@@ -204,9 +209,21 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun handlePlayAction() {
+        if (MediaRepository.getCurrentSong() == null) {
+            handleEmptyPlayRequest()
+            return
+        }
+
         if (requestAudioFocus()) {
             play()
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            updateNotification()
+        }
+    }
+
+    private fun handleEmptyPlayRequest() {
+        updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
+        if (mediaSession.controller.metadata != null) {
             updateNotification()
         }
     }

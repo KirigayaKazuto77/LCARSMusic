@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
@@ -285,8 +286,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeContent() {
-        val lastView = sharedPreferences.getString("LAST_VIEW", "NOW PLAYING") ?: "NOW PLAYING"
-        
         lifecycleScope.launch {
             val cachedSongs = MediaScanner.loadMediaCache(this@MainActivity)
             if (cachedSongs.isNotEmpty()) {
@@ -299,7 +298,7 @@ class MainActivity : AppCompatActivity() {
                 checkAndRehydrate()
             }
             
-            switchView(lastView)
+            switchView("NOW PLAYING")
             startClock()
         }
     }
@@ -313,6 +312,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchView(viewName: String) {
         tvViewTitle.text = viewName.uppercase()
+        updateNavigationSelection(viewName)
+
         layoutNowPlaying.visibility = View.GONE
         layoutLibrary.visibility = View.GONE
         layoutPlaylist.visibility = View.GONE
@@ -329,6 +330,29 @@ class MainActivity : AppCompatActivity() {
         }
         
         sharedPreferences.edit().putString("LAST_VIEW", viewName).apply()
+    }
+
+    private fun updateNavigationSelection(viewName: String) {
+        val selectedColor = ContextCompat.getColor(this, android.R.color.holo_orange_light)
+        val defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray)
+        val selectedTextColor = ContextCompat.getColor(this, android.R.color.black)
+        val defaultTextColor = ContextCompat.getColor(this, android.R.color.white)
+
+        val navButtons = mapOf(
+            "NOW PLAYING" to findViewById<Button>(R.id.btn_now_playing),
+            "LIBRARY" to findViewById<Button>(R.id.btn_library),
+            "PLAYLIST" to findViewById<Button>(R.id.btn_playlist),
+            "EQUALIZER" to findViewById<Button>(R.id.btn_equalizer)
+        )
+
+        navButtons.forEach { (name, button) ->
+            val isSelected = name == viewName
+            button.isSelected = isSelected
+            button.backgroundTintList = ColorStateList.valueOf(
+                if (isSelected) selectedColor else defaultColor
+            )
+            button.setTextColor(if (isSelected) selectedTextColor else defaultTextColor)
+        }
     }
 
     private fun setupRecyclerViews() {
@@ -464,7 +488,7 @@ class MainActivity : AppCompatActivity() {
             if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
                 mediaController?.transportControls?.pause()
             } else {
-                mediaController?.transportControls?.play()
+                playSelectedOrFirstAvailableSong()
             }
         }
         findViewById<ImageButton>(R.id.btn_previous).setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
@@ -509,6 +533,42 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    private fun playSelectedOrFirstAvailableSong() {
+        val hasSelectedSong = MediaRepository.getCurrentSong() != null
+        val queue = MediaRepository.currentQueue
+
+        when {
+            hasSelectedSong -> {
+                mediaController?.transportControls?.play()
+            }
+            queue.isNotEmpty() -> {
+                MediaRepository.currentQueueIndex = 0
+                updateNowPlayingUIFromRepository()
+                MediaRepository.getCurrentSong()?.let { song ->
+                    songAdapter.updateHighlight(song.id)
+                }
+                mediaController?.transportControls?.play()
+            }
+            allSongs.isNotEmpty() -> {
+                currentFolder = null
+                MediaRepository.currentQueue = allSongs
+                MediaRepository.currentQueueIndex = 0
+                MediaRepository.playlistName = "ALL SONGS"
+                updateLibraryView()
+                updateNowPlayingUIFromRepository()
+                MediaRepository.getCurrentSong()?.let { song ->
+                    songAdapter.updateHighlight(song.id)
+                }
+                mediaController?.transportControls?.play()
+            }
+            else -> {
+                findViewById<ImageButton>(R.id.btn_play_pause)
+                    .setImageResource(android.R.drawable.ic_media_play)
+                Toast.makeText(this, "NO SONGS AVAILABLE", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun setupVolumeControl() {
