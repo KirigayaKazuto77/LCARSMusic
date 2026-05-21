@@ -170,6 +170,10 @@ class MainActivity : AppCompatActivity() {
                 handleVisualizerAudioSession(sessionId, "playback_state")
             }
 
+            if (state?.state == PlaybackStateCompat.STATE_PAUSED) {
+                visualizerView.animateToZero()
+            }
+
             val playPauseBtn = findViewById<ImageButton>(R.id.btn_play_pause)
             if (state?.state == PlaybackStateCompat.STATE_PLAYING) {
                 playPauseBtn.setImageResource(android.R.drawable.ic_media_pause)

@@ -22,6 +22,7 @@ The right panel will take up 100% of the height and 75% of the width of the scre
   1. Frequency Domain Mode: Uses FFT data to render a standard spectrum analyzer (unidirectional bars extending upward along the positive y-axis). 
   2. Time Domain Mode: Uses Waveform data to render a bidirectional waveform (bars extending symmetrically along both the positive and negative y-axes).
 - (**New**) The toggle button for the two modes should be at the bottom part of the Audio Visualizer. This toggle should consist of two buttons side-by-side and will act like a toggle switch. When the user clicks the mode 1 button, the mode 1 button will have a yellow background and the mode 2 button will have a blue background. When the user click the mode 2 button, it will have a yellow background and the mode 1 button will have a blue background.
+- To "Turn-off" the visualizer, the user needs to press the active mode button to turn the audio visualizer off
 - **Performance Constraints:**
   - The `visualizer capture rate must be capped at a maximum of 30 frames per second to reduce CPU load.
   - The visualizer MUST pause processing entirely when the app is placed in the background or when the screen is turned off. It should only consume CPU cycles when actively visible on the screen.
