@@ -36,6 +36,10 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
+    private companion object {
+        const val PREF_VISUALIZER_MODE = "PREF_VISUALIZER_MODE"
+    }
+
     private lateinit var audioManager: AudioManager
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var playbackStateManager: PlaybackStateManager
@@ -351,11 +355,12 @@ class MainActivity : AppCompatActivity() {
             setVisualizerMode(nextMode)
         }
 
-        setVisualizerMode(VisualizerMode.FREQUENCY_DOMAIN)
+        setVisualizerMode(loadSavedVisualizerMode())
     }
 
     private fun setVisualizerMode(mode: VisualizerMode) {
         currentVisualizerMode = mode
+        sharedPreferences.edit().putString(PREF_VISUALIZER_MODE, mode.name).apply()
 
         when (mode) {
             VisualizerMode.OFF -> {
@@ -391,6 +396,13 @@ class MainActivity : AppCompatActivity() {
         btnVisualizerTimeDomain.setTextColor(
             ContextCompat.getColor(this, if (timeSelected) android.R.color.black else android.R.color.white)
         )
+    }
+
+    private fun loadSavedVisualizerMode(): VisualizerMode {
+        val savedMode = sharedPreferences.getString(PREF_VISUALIZER_MODE, null)
+        return savedMode?.let {
+            runCatching { VisualizerMode.valueOf(it) }.getOrNull()
+        } ?: VisualizerMode.FREQUENCY_DOMAIN
     }
 
     private fun checkPermissions() {
