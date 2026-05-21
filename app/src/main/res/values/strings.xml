@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">LCARS Music</string>
+    <string name="visualizer_mode_frequency_domain">FREQUENCY DOMAIN</string>
+    <string name="visualizer_mode_time_domain">TIME DOMAIN</string>
 </resources>

@@ -40,6 +40,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvCurrentDate: TextView
     
     private lateinit var mainViewContainer: FrameLayout
+    private lateinit var btnVisualizerFrequencyDomain: Button
+    private lateinit var btnVisualizerTimeDomain: Button
     
     // Media Browser and Controller
     private lateinit var mediaBrowser: MediaBrowserCompat
@@ -256,14 +258,41 @@ class MainActivity : AppCompatActivity() {
             terminateApp()
         }
 
-        // Toggle visualizer mode
-        findViewById<Button>(R.id.btn_toggle_visualizer_mode).setOnClickListener {
-            visualizerView.mode = if (visualizerView.mode == LcarsVisualizerView.Mode.FREQUENCY_DOMAIN) {
-                LcarsVisualizerView.Mode.TIME_DOMAIN
-            } else {
-                LcarsVisualizerView.Mode.FREQUENCY_DOMAIN
-            }
+        btnVisualizerFrequencyDomain = findViewById(R.id.btn_visualizer_frequency_domain)
+        btnVisualizerTimeDomain = findViewById(R.id.btn_visualizer_time_domain)
+
+        btnVisualizerFrequencyDomain.setOnClickListener {
+            setVisualizerMode(LcarsVisualizerView.Mode.FREQUENCY_DOMAIN)
         }
+
+        btnVisualizerTimeDomain.setOnClickListener {
+            setVisualizerMode(LcarsVisualizerView.Mode.TIME_DOMAIN)
+        }
+
+        setVisualizerMode(LcarsVisualizerView.Mode.FREQUENCY_DOMAIN)
+    }
+
+    private fun setVisualizerMode(mode: LcarsVisualizerView.Mode) {
+        visualizerView.mode = mode
+
+        val selectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_selected)
+        val unselectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_unselected)
+
+        val frequencySelected = mode == LcarsVisualizerView.Mode.FREQUENCY_DOMAIN
+
+        btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(
+            if (frequencySelected) selectedColor else unselectedColor
+        )
+        btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(
+            if (frequencySelected) unselectedColor else selectedColor
+        )
+
+        btnVisualizerFrequencyDomain.setTextColor(
+            ContextCompat.getColor(this, if (frequencySelected) android.R.color.black else android.R.color.white)
+        )
+        btnVisualizerTimeDomain.setTextColor(
+            ContextCompat.getColor(this, if (frequencySelected) android.R.color.white else android.R.color.black)
+        )
     }
 
     private fun checkPermissions() {
@@ -368,8 +397,8 @@ class MainActivity : AppCompatActivity() {
             MediaRepository.playlistName = currentFolder ?: "ALL SONGS"
             
             // Explicitly call PLAY when user clicks a song from the library
+            songAdapter.updateHighlight(song.id)
             mediaController?.transportControls?.playFromUri(song.uri, null)
-            switchView("NOW PLAYING")
         }
         rvMediaList.adapter = songAdapter
 

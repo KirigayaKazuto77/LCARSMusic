@@ -15,12 +15,13 @@ The right panel will take up 100% of the height and 75% of the width of the scre
 #### 1. Audio Visualizer
 - It will have its own layout/drawable file.
 - It will take the whole width of its parent.
-- It will take 30% height of its parent.
+- It will take 30% (**will no be updated to 40%**) height of its parent.
 - It will be at the top of "Navigational Menu" panel.
 - It will display the audio visualization of the current media being played by the app. 
 - The audio visualization have two modes. It will only show one mode at a time. The user should be able to toggle between the two modes.
   1. Frequency Domain Mode: Uses FFT data to render a standard spectrum analyzer (unidirectional bars extending upward along the positive y-axis). 
   2. Time Domain Mode: Uses Waveform data to render a bidirectional waveform (bars extending symmetrically along both the positive and negative y-axes).
+- (**New**) The toggle button for the two modes should be at the bottom part of the Audio Visualizer. This toggle should consist of two buttons side-by-side and will act like a toggle switch. When the user clicks the mode 1 button, the mode 1 button will have a yellow background and the mode 2 button will have a blue background. When the user click the mode 2 button, it will have a yellow background and the mode 1 button will have a blue background.
 - **Performance Constraints:**
   - The `visualizer capture rate must be capped at a maximum of 30 frames per second to reduce CPU load.
   - The visualizer MUST pause processing entirely when the app is placed in the background or when the screen is turned off. It should only consume CPU cycles when actively visible on the screen.
@@ -29,7 +30,7 @@ The right panel will take up 100% of the height and 75% of the width of the scre
 #### 2. Navigation Menu
 - It will have its own layout/drawable file.
 - It will take the whole width of its parent.
-- It will take 70% height of its parent.
+- It will take 70% (**will no be updated to 60%**) height of its parent.
 - It will be at the bottom of "Audio Visualizer" panel.
 - It will consist of 4 menu items - Now Playing, Library, Playlist, and Equalizer.
 

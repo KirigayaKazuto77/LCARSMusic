@@ -36,3 +36,6 @@ google-services.json
 # Gradle user home cache (should never be committed)
 .gradle-user-home/
 .gradle/
+.gradle-local
+.gradle-local/
+**/.gradle-local/
