@@ -163,6 +163,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                 mediaPlayer?.prepare()
                 currentPlayingUri = song.uri
                 latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
+                EqualizerEngine.initialize(latestAudioSessionId)
                 Log.d(
                     VISUALIZER_LOG_TAG,
                     "SERVICE_CAPTURED_AUDIO_SESSION_ID sessionId=$latestAudioSessionId title=${song.title}"
@@ -440,6 +441,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         super.onDestroy()
         serviceScope.cancel()
         mediaSession.release()
+        EqualizerEngine.release()
         mediaPlayer?.release()
         mediaPlayer = null
         abandonAudioFocus()
