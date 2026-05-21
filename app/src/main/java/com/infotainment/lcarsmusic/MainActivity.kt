@@ -52,6 +52,13 @@ class MainActivity : AppCompatActivity() {
     private var isActivityForeground = false
     private var latestVisualizerSessionId = 0
     private var isScreenReceiverRegistered = false
+    private var currentVisualizerMode = VisualizerMode.OFF
+
+    private enum class VisualizerMode {
+        OFF,
+        FREQUENCY_DOMAIN,
+        TIME_DOMAIN
+    }
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -66,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                         "SCREEN_ON_RESUME_VISUALIZER foreground=$isActivityForeground sessionId=$latestVisualizerSessionId"
                     )
                     if (isActivityForeground) {
-                        visualizerView.resume()
+                        resumeVisualizerIfEnabled()
                     }
                 }
             }
@@ -310,36 +317,62 @@ class MainActivity : AppCompatActivity() {
         btnVisualizerTimeDomain = findViewById(R.id.btn_visualizer_time_domain)
 
         btnVisualizerFrequencyDomain.setOnClickListener {
-            setVisualizerMode(LcarsVisualizerView.Mode.FREQUENCY_DOMAIN)
+            val nextMode = if (currentVisualizerMode == VisualizerMode.FREQUENCY_DOMAIN) {
+                VisualizerMode.OFF
+            } else {
+                VisualizerMode.FREQUENCY_DOMAIN
+            }
+            setVisualizerMode(nextMode)
         }
 
         btnVisualizerTimeDomain.setOnClickListener {
-            setVisualizerMode(LcarsVisualizerView.Mode.TIME_DOMAIN)
+            val nextMode = if (currentVisualizerMode == VisualizerMode.TIME_DOMAIN) {
+                VisualizerMode.OFF
+            } else {
+                VisualizerMode.TIME_DOMAIN
+            }
+            setVisualizerMode(nextMode)
         }
 
-        setVisualizerMode(LcarsVisualizerView.Mode.FREQUENCY_DOMAIN)
+        setVisualizerMode(VisualizerMode.FREQUENCY_DOMAIN)
     }
 
-    private fun setVisualizerMode(mode: LcarsVisualizerView.Mode) {
-        visualizerView.mode = mode
+    private fun setVisualizerMode(mode: VisualizerMode) {
+        currentVisualizerMode = mode
+
+        when (mode) {
+            VisualizerMode.OFF -> {
+                visualizerView.animateToZero()
+                visualizerView.pause()
+            }
+            VisualizerMode.FREQUENCY_DOMAIN -> {
+                visualizerView.mode = LcarsVisualizerView.Mode.FREQUENCY_DOMAIN
+                resumeVisualizerIfEnabled()
+            }
+            VisualizerMode.TIME_DOMAIN -> {
+                visualizerView.mode = LcarsVisualizerView.Mode.TIME_DOMAIN
+                resumeVisualizerIfEnabled()
+            }
+        }
 
         val selectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_selected)
         val unselectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_unselected)
 
-        val frequencySelected = mode == LcarsVisualizerView.Mode.FREQUENCY_DOMAIN
+        val frequencySelected = mode == VisualizerMode.FREQUENCY_DOMAIN
+        val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 
         btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(
             if (frequencySelected) selectedColor else unselectedColor
         )
         btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(
-            if (frequencySelected) unselectedColor else selectedColor
+            if (timeSelected) selectedColor else unselectedColor
         )
 
         btnVisualizerFrequencyDomain.setTextColor(
             ContextCompat.getColor(this, if (frequencySelected) android.R.color.black else android.R.color.white)
         )
         btnVisualizerTimeDomain.setTextColor(
-            ContextCompat.getColor(this, if (frequencySelected) android.R.color.white else android.R.color.black)
+            ContextCompat.getColor(this, if (timeSelected) android.R.color.black else android.R.color.white)
         )
     }
 
@@ -416,7 +449,29 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (currentVisualizerMode == VisualizerMode.OFF) {
+            Log.d(
+                MusicPlaybackService.VISUALIZER_LOG_TAG,
+                "VISUALIZER_SETUP_SKIPPED_MODE_OFF source=$source sessionId=$sessionId"
+            )
+            return
+        }
+
         visualizerView.setAudioSessionId(sessionId)
+    }
+
+    private fun resumeVisualizerIfEnabled() {
+        if (currentVisualizerMode == VisualizerMode.OFF) return
+
+        visualizerView.resume()
+
+        if (
+            latestVisualizerSessionId > 0 &&
+            visualizerView.activeSessionId != latestVisualizerSessionId &&
+            hasRecordAudioPermission()
+        ) {
+            visualizerView.setAudioSessionId(latestVisualizerSessionId)
+        }
     }
 
     private fun registerScreenStateReceiver() {
@@ -780,7 +835,7 @@ class MainActivity : AppCompatActivity() {
             MusicPlaybackService.VISUALIZER_LOG_TAG,
             "ACTIVITY_FOREGROUND_RESUME_VISUALIZER sessionId=$latestVisualizerSessionId"
         )
-        visualizerView.resume()
+        resumeVisualizerIfEnabled()
     }
 
     override fun onPause() {
