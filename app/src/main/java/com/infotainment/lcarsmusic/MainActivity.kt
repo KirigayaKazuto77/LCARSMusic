@@ -38,6 +38,10 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val PREF_VISUALIZER_MODE = "PREF_VISUALIZER_MODE"
+        const val PREF_EQUALIZER_SELECTED_PRESET_INDEX = "PREF_EQUALIZER_SELECTED_PRESET_INDEX"
+        const val PREF_EQUALIZER_BAND_PROGRESS = "PREF_EQUALIZER_BAND_PROGRESS"
+        const val CUSTOM_PRESET_INDEX = -1
+        const val FLAT_PRESET_INDEX = 0
     }
 
     private lateinit var audioManager: AudioManager
@@ -60,6 +64,8 @@ class MainActivity : AppCompatActivity() {
     private var latestVisualizerSessionId = 0
     private var isScreenReceiverRegistered = false
     private var currentVisualizerMode = VisualizerMode.OFF
+    private var currentSelectedPresetIndex = FLAT_PRESET_INDEX
+    private var lastEqualizerStateAppliedSessionId = 0
     private val equalizerBandViews = mutableListOf<EqualizerBandView>()
 
     private enum class VisualizerMode {
@@ -72,6 +78,12 @@ class MainActivity : AppCompatActivity() {
         val band: Short,
         val levelLabel: TextView,
         val seekBar: SegmentedSeekBar
+    )
+
+    private data class EqualizerPreset(
+        val index: Int,
+        val label: String,
+        val isHardwarePreset: Boolean
     )
 
     private val screenStateReceiver = object : BroadcastReceiver() {
@@ -461,6 +473,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         latestVisualizerSessionId = sessionId
+        applySavedEqualizerStateToHardwareIfNeeded(sessionId)
 
         if (!hasRecordAudioPermission()) {
             Log.d(
@@ -819,7 +832,11 @@ class MainActivity : AppCompatActivity() {
         if (equalizer == null) {
             bandsContainer.removeAllViews()
             equalizerBandViews.clear()
-            btnPreset.text = "FLAT"
+            currentSelectedPresetIndex = sharedPreferences.getInt(
+                PREF_EQUALIZER_SELECTED_PRESET_INDEX,
+                FLAT_PRESET_INDEX
+            )
+            btnPreset.text = if (currentSelectedPresetIndex == CUSTOM_PRESET_INDEX) "CUSTOM" else "FLAT"
             btnPreset.setOnClickListener { view ->
                 PopupMenu(this, view).apply {
                     menu.add("FLAT")
@@ -827,7 +844,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             btnReset.setOnClickListener {
+                currentSelectedPresetIndex = FLAT_PRESET_INDEX
                 btnPreset.text = "FLAT"
+                sharedPreferences.edit()
+                    .putInt(PREF_EQUALIZER_SELECTED_PRESET_INDEX, FLAT_PRESET_INDEX)
+                    .remove(PREF_EQUALIZER_BAND_PROGRESS)
+                    .apply()
             }
             Log.d(
                 MusicPlaybackService.VISUALIZER_LOG_TAG,
@@ -836,29 +858,30 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        populateEqualizerBands(equalizer, bandsContainer)
+        populateEqualizerBands(equalizer, bandsContainer, btnPreset)
+        loadEqualizerState(equalizer, btnPreset)
         
         btnPreset.setOnClickListener { view ->
             val popup = PopupMenu(this, view)
-            val numberOfPresets = runCatching { equalizer.numberOfPresets.toInt() }.getOrDefault(0)
+            val presets = buildEqualizerPresets(equalizer)
+            val hardwarePresets = presets.filter { it.isHardwarePreset }
 
-            if (numberOfPresets > 0) {
-                for (presetIndex in 0 until numberOfPresets) {
-                    val presetName = runCatching {
-                        equalizer.getPresetName(presetIndex.toShort())
-                    }.getOrNull() ?: "PRESET ${presetIndex + 1}"
-                    popup.menu.add(0, presetIndex, presetIndex, presetName.uppercase())
+            if (hardwarePresets.isNotEmpty()) {
+                hardwarePresets.forEach { preset ->
+                    popup.menu.add(0, preset.index, preset.index, preset.label)
                 }
             } else {
-                popup.menu.add("FLAT")
+                popup.menu.add(0, FLAT_PRESET_INDEX, FLAT_PRESET_INDEX, "FLAT")
             }
             
             popup.setOnMenuItemClickListener { item ->
                 btnPreset.text = item.title
-                if (numberOfPresets > 0) {
+                currentSelectedPresetIndex = item.itemId
+                if (hardwarePresets.isNotEmpty()) {
                     runCatching {
                         equalizer.usePreset(item.itemId.toShort())
                         refreshEqualizerBandViews(equalizer)
+                        saveEqualizerState()
                     }.onFailure { error ->
                         Log.w(
                             MusicPlaybackService.VISUALIZER_LOG_TAG,
@@ -866,6 +889,9 @@ class MainActivity : AppCompatActivity() {
                             error
                         )
                     }
+                } else {
+                    resetEqualizerBands(equalizer)
+                    saveEqualizerState()
                 }
                 true
             }
@@ -874,11 +900,35 @@ class MainActivity : AppCompatActivity() {
         
         btnReset.setOnClickListener {
             btnPreset.text = "FLAT"
+            currentSelectedPresetIndex = FLAT_PRESET_INDEX
             resetEqualizerBands(equalizer)
+            saveEqualizerState()
         }
     }
 
-    private fun populateEqualizerBands(equalizer: Equalizer, bandsContainer: LinearLayout) {
+    private fun buildEqualizerPresets(equalizer: Equalizer): List<EqualizerPreset> {
+        val presets = mutableListOf(EqualizerPreset(CUSTOM_PRESET_INDEX, "CUSTOM", false))
+        val numberOfPresets = runCatching { equalizer.numberOfPresets.toInt() }.getOrDefault(0)
+
+        if (numberOfPresets > 0) {
+            for (presetIndex in 0 until numberOfPresets) {
+                val presetName = runCatching {
+                    equalizer.getPresetName(presetIndex.toShort())
+                }.getOrNull() ?: "PRESET ${presetIndex + 1}"
+                presets.add(EqualizerPreset(presetIndex, presetName.uppercase(), true))
+            }
+        } else {
+            presets.add(EqualizerPreset(FLAT_PRESET_INDEX, "FLAT", false))
+        }
+
+        return presets
+    }
+
+    private fun populateEqualizerBands(
+        equalizer: Equalizer,
+        bandsContainer: LinearLayout,
+        presetButton: Button
+    ) {
         bandsContainer.removeAllViews()
         equalizerBandViews.clear()
 
@@ -897,7 +947,7 @@ class MainActivity : AppCompatActivity() {
 
         for (bandIndex in 0 until numberOfBands) {
             val band = bandIndex.toShort()
-            val bandView = createEqualizerBandView(equalizer, band, bandLevelRange)
+            val bandView = createEqualizerBandView(equalizer, band, bandLevelRange, presetButton)
             bandsContainer.addView(bandView)
         }
 
@@ -910,7 +960,8 @@ class MainActivity : AppCompatActivity() {
     private fun createEqualizerBandView(
         equalizer: Equalizer,
         band: Short,
-        bandLevelRange: ShortArray
+        bandLevelRange: ShortArray,
+        presetButton: Button
     ): LinearLayout {
         val currentLevel = runCatching { equalizer.getBandLevel(band) }.getOrDefault(0.toShort())
         val centerFrequency = runCatching { equalizer.getCenterFreq(band) }.getOrDefault(0)
@@ -940,6 +991,9 @@ class MainActivity : AppCompatActivity() {
                     runCatching {
                         equalizer.setBandLevel(band, newLevel)
                         levelLabel.text = formatBandLevel(newLevel)
+                        currentSelectedPresetIndex = CUSTOM_PRESET_INDEX
+                        presetButton.text = "CUSTOM"
+                        saveEqualizerState()
                     }.onFailure { error ->
                         Log.w(
                             MusicPlaybackService.VISUALIZER_LOG_TAG,
@@ -1023,6 +1077,149 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    private fun saveEqualizerState() {
+        val bandProgress = equalizerBandViews
+            .sortedBy { it.band.toInt() }
+            .joinToString(",") { bandView ->
+                (bandView.seekBar.progress + 0.5f).toInt().coerceIn(0, 100).toString()
+            }
+
+        sharedPreferences.edit()
+            .putInt(PREF_EQUALIZER_SELECTED_PRESET_INDEX, currentSelectedPresetIndex)
+            .putString(PREF_EQUALIZER_BAND_PROGRESS, bandProgress)
+            .apply()
+    }
+
+    private fun loadEqualizerState(equalizer: Equalizer, presetButton: Button) {
+        val savedProgressString = sharedPreferences.getString(PREF_EQUALIZER_BAND_PROGRESS, null)
+        val savedProgress = parseSavedBandProgress(savedProgressString)
+
+        if (savedProgressString == null) {
+            currentSelectedPresetIndex = FLAT_PRESET_INDEX
+            presetButton.text = "FLAT"
+            applyFlatEqualizerState(equalizer)
+            refreshEqualizerBandViews(equalizer)
+            return
+        }
+
+        currentSelectedPresetIndex = sharedPreferences.getInt(
+            PREF_EQUALIZER_SELECTED_PRESET_INDEX,
+            FLAT_PRESET_INDEX
+        )
+        applyBandProgressToEqualizer(equalizer, savedProgress)
+        refreshEqualizerBandViews(equalizer)
+        presetButton.text = resolveEqualizerPresetLabel(equalizer, currentSelectedPresetIndex, savedProgress)
+    }
+
+    private fun applySavedEqualizerStateToHardwareIfNeeded(sessionId: Int) {
+        if (sessionId <= 0 || lastEqualizerStateAppliedSessionId == sessionId) return
+
+        val equalizer = EqualizerEngine.activeEqualizer ?: return
+        val savedProgressString = sharedPreferences.getString(PREF_EQUALIZER_BAND_PROGRESS, null)
+        val savedPresetIndex = sharedPreferences.getInt(
+            PREF_EQUALIZER_SELECTED_PRESET_INDEX,
+            FLAT_PRESET_INDEX
+        )
+
+        if (savedProgressString == null) {
+            applyFlatEqualizerState(equalizer)
+        } else {
+            val savedProgress = parseSavedBandProgress(savedProgressString)
+            if (savedProgress.isNotEmpty()) {
+                applyBandProgressToEqualizer(equalizer, savedProgress)
+            } else if (savedPresetIndex >= 0) {
+                runCatching {
+                    equalizer.usePreset(savedPresetIndex.toShort())
+                }.onFailure { error ->
+                    Log.w(
+                        MusicPlaybackService.VISUALIZER_LOG_TAG,
+                        "EQUALIZER_RESTORE_PRESET_FAILED preset=$savedPresetIndex",
+                        error
+                    )
+                    applyFlatEqualizerState(equalizer)
+                }
+            } else {
+                applyFlatEqualizerState(equalizer)
+            }
+        }
+
+        lastEqualizerStateAppliedSessionId = sessionId
+    }
+
+    private fun parseSavedBandProgress(savedProgressString: String?): List<Float> {
+        return savedProgressString
+            ?.split(",")
+            ?.mapNotNull { it.trim().toFloatOrNull()?.coerceIn(0f, 100f) }
+            .orEmpty()
+    }
+
+    private fun applyBandProgressToEqualizer(equalizer: Equalizer, bandProgress: List<Float>) {
+        val bandLevelRange = runCatching { equalizer.bandLevelRange }.getOrElse { error ->
+            Log.w(MusicPlaybackService.VISUALIZER_LOG_TAG, "EQUALIZER_RESTORE_RANGE_UNAVAILABLE", error)
+            return
+        }
+        if (bandLevelRange.size < 2) return
+
+        val numberOfBands = runCatching { equalizer.numberOfBands.toInt() }.getOrElse { error ->
+            Log.w(MusicPlaybackService.VISUALIZER_LOG_TAG, "EQUALIZER_RESTORE_BANDS_UNAVAILABLE", error)
+            return
+        }
+
+        for (bandIndex in 0 until numberOfBands) {
+            val progress = bandProgress.getOrNull(bandIndex) ?: 50f
+            val level = progressToMillibels(progress, bandLevelRange)
+            runCatching {
+                equalizer.setBandLevel(bandIndex.toShort(), level)
+            }.onFailure { error ->
+                Log.w(
+                    MusicPlaybackService.VISUALIZER_LOG_TAG,
+                    "EQUALIZER_RESTORE_BAND_FAILED band=$bandIndex level=$level",
+                    error
+                )
+            }
+        }
+    }
+
+    private fun applyFlatEqualizerState(equalizer: Equalizer) {
+        val bandLevelRange = runCatching { equalizer.bandLevelRange }.getOrElse { error ->
+            Log.w(MusicPlaybackService.VISUALIZER_LOG_TAG, "EQUALIZER_FLAT_RANGE_UNAVAILABLE", error)
+            return
+        }
+        if (bandLevelRange.size < 2) return
+
+        val numberOfBands = runCatching { equalizer.numberOfBands.toInt() }.getOrElse { error ->
+            Log.w(MusicPlaybackService.VISUALIZER_LOG_TAG, "EQUALIZER_FLAT_BANDS_UNAVAILABLE", error)
+            return
+        }
+        val flatLevel = 0.coerceIn(bandLevelRange[0].toInt(), bandLevelRange[1].toInt()).toShort()
+
+        for (bandIndex in 0 until numberOfBands) {
+            runCatching {
+                equalizer.setBandLevel(bandIndex.toShort(), flatLevel)
+            }.onFailure { error ->
+                Log.w(
+                    MusicPlaybackService.VISUALIZER_LOG_TAG,
+                    "EQUALIZER_FLAT_BAND_FAILED band=$bandIndex",
+                    error
+                )
+            }
+        }
+    }
+
+    private fun resolveEqualizerPresetLabel(
+        equalizer: Equalizer,
+        presetIndex: Int,
+        bandProgress: List<Float>
+    ): String {
+        if (presetIndex == CUSTOM_PRESET_INDEX) return "CUSTOM"
+        if (presetIndex == FLAT_PRESET_INDEX && bandProgress.all { it.toInt() == 50 }) return "FLAT"
+
+        return buildEqualizerPresets(equalizer)
+            .firstOrNull { it.index == presetIndex && it.isHardwarePreset }
+            ?.label
+            ?: "FLAT"
     }
 
     private fun millibelsToProgress(level: Short, bandLevelRange: ShortArray): Float {

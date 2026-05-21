@@ -152,3 +152,12 @@ The right panel will take up 100% of the height and 75% of the width of the scre
 - The app must request the necessary runtime permissions gracefully upon startup:
      - `READ_EXTERNAL_STORAGE` (or `READ_MEDIA_AUDIO` for newer Android versions) to scan USB drives and internal storage.
      - `RECORD_AUDIO` permission, which is strictly required by the Android OS to access the audio session for the Visualizer.
+
+
+
+
+
+To be implemented:
+- Preset Selector Popup and Dismissal Animation
+- When the Audio Visualizer is of, Show a rotating Starfleet Inignia
+- Bass Boost in Equalizer
