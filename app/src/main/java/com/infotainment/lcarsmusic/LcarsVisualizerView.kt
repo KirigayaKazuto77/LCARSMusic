@@ -1,5 +1,8 @@
 package com.infotainment.lcarsmusic
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -9,8 +12,8 @@ import android.media.audiofx.Visualizer
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
-import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -25,21 +28,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
     private var fftData: ByteArray? = null
     private var isPaused = false
     private var isDecayingToZero = false
-
-    private val decayRunnable = object : Runnable {
-        override fun run() {
-            val fftStillActive = decayFftData()
-            val waveformStillActive = decayWaveformData()
-
-            postInvalidateOnAnimation()
-
-            if (fftStillActive || waveformStillActive) {
-                postOnAnimation(this)
-            } else {
-                isDecayingToZero = false
-            }
-        }
-    }
+    private var decayAnimator: ValueAnimator? = null
 
     var activeSessionId: Int = 0
         private set
@@ -115,11 +104,47 @@ class LcarsVisualizerView @JvmOverloads constructor(
 
     fun animateToZero() {
         if (isDecayingToZero) return
-        if (fftData == null && waveformData == null) return
 
         isDecayingToZero = true
-        removeCallbacks(decayRunnable)
-        postOnAnimation(decayRunnable)
+
+        if (fftData == null && waveformData == null) {
+            isDecayingToZero = false
+            return
+        }
+
+        val baselineFftData = fftData?.clone()
+        val baselineWaveformData = waveformData?.clone()
+        var wasCanceled = false
+
+        decayAnimator = ValueAnimator.ofFloat(1f, 0f).apply {
+            duration = DECAY_ANIMATION_DURATION_MS
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { animator ->
+                val multiplier = animator.animatedValue as Float
+                applyFftDecayFrame(baselineFftData, multiplier)
+                applyWaveformDecayFrame(baselineWaveformData, multiplier)
+                invalidate()
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationCancel(animation: Animator) {
+                    wasCanceled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!wasCanceled) {
+                        fftData?.fill(0)
+                        waveformData?.fill(WAVEFORM_CENTER.toByte())
+                        invalidate()
+                    }
+
+                    isDecayingToZero = false
+                    if (decayAnimator == animation) {
+                        decayAnimator = null
+                    }
+                }
+            })
+            start()
+        }
     }
 
     private fun initializeVisualizer(sessionId: Int) {
@@ -145,6 +170,8 @@ class LcarsVisualizerView @JvmOverloads constructor(
                         waveform: ByteArray?,
                         samplingRate: Int
                     ) {
+                        if (isDecayingToZero) return
+
                         Log.d(
                             TAG,
                             "WAVEFORM_CAPTURE size=${waveform?.size ?: 0} sample=${sampleBytes(waveform)} samplingRate=$samplingRate"
@@ -161,6 +188,8 @@ class LcarsVisualizerView @JvmOverloads constructor(
                         fft: ByteArray?,
                         samplingRate: Int
                     ) {
+                        if (isDecayingToZero) return
+
                         Log.d(
                             TAG,
                             "FFT_CAPTURE size=${fft?.size ?: 0} sample=${sampleBytes(fft)} samplingRate=$samplingRate"
@@ -304,48 +333,35 @@ class LcarsVisualizerView @JvmOverloads constructor(
         }
     }
 
-    private fun decayFftData(): Boolean {
-        val data = fftData ?: return false
-        var stillActive = false
-
-        for (i in data.indices) {
-            val value = data[i].toInt()
-            val decayed = (value * DECAY_FACTOR).roundToInt()
-
-            if (abs(decayed) > DECAY_STOP_THRESHOLD) {
-                stillActive = true
-                data[i] = decayed.coerceIn(Byte.MIN_VALUE.toInt(), Byte.MAX_VALUE.toInt()).toByte()
-            } else {
-                data[i] = 0
-            }
-        }
-
-        return stillActive
-    }
-
-    private fun decayWaveformData(): Boolean {
-        val data = waveformData ?: return false
-        var stillActive = false
-
-        for (i in data.indices) {
-            val unsignedSample = data[i].toInt() and 0xFF
-            val centeredAmplitude = unsignedSample - WAVEFORM_CENTER
-            val decayedAmplitude = (centeredAmplitude * DECAY_FACTOR).roundToInt()
-
-            if (abs(decayedAmplitude) > DECAY_STOP_THRESHOLD) {
-                stillActive = true
-                data[i] = (WAVEFORM_CENTER + decayedAmplitude).coerceIn(0, 255).toByte()
-            } else {
-                data[i] = WAVEFORM_CENTER.toByte()
-            }
-        }
-
-        return stillActive
-    }
-
     private fun cancelDecayAnimation() {
         isDecayingToZero = false
-        removeCallbacks(decayRunnable)
+        decayAnimator?.cancel()
+        decayAnimator = null
+    }
+
+    private fun applyFftDecayFrame(baselineData: ByteArray?, multiplier: Float) {
+        val data = fftData ?: return
+        val baseline = baselineData ?: return
+        val frameSize = minOf(data.size, baseline.size)
+
+        for (i in 0 until frameSize) {
+            val baselineValue = baseline[i].toInt()
+            val decayed = (baselineValue * multiplier).roundToInt()
+            data[i] = decayed.coerceIn(Byte.MIN_VALUE.toInt(), Byte.MAX_VALUE.toInt()).toByte()
+        }
+    }
+
+    private fun applyWaveformDecayFrame(baselineData: ByteArray?, multiplier: Float) {
+        val data = waveformData ?: return
+        val baseline = baselineData ?: return
+        val frameSize = minOf(data.size, baseline.size)
+
+        for (i in 0 until frameSize) {
+            val baselineSample = baseline[i].toInt() and 0xFF
+            val centeredAmplitude = baselineSample - WAVEFORM_CENTER
+            val decayedSample = WAVEFORM_CENTER + (centeredAmplitude * multiplier).roundToInt()
+            data[i] = decayedSample.coerceIn(0, 255).toByte()
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -359,8 +375,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
         const val REQUESTED_CAPTURE_SIZE = 512
         const val REQUESTED_CAPTURE_RATE_MHZ = 30_000
         const val SAMPLE_BYTE_COUNT = 8
-        const val DECAY_FACTOR = 0.85f
-        const val DECAY_STOP_THRESHOLD = 1
+        const val DECAY_ANIMATION_DURATION_MS = 1000L
         const val WAVEFORM_CENTER = 128
     }
 }
