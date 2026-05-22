@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -54,52 +53,11 @@
         android:padding="16dp">
 
         <LinearLayout
-            android:id="@+id/ll_equalizer_controls"
+            android:id="@+id/equalizerBandsContainer"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <!-- Example usage of SegmentedSeekBar. Multiple instances will be added programmatically or via XML -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginEnd="24dp">
-
-                <TextView
-                    android:id="@+id/tv_band_value_1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0DB"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="4dp"/>
-
-                <com.infotainment.lcarsmusic.SegmentedSeekBar
-                    android:id="@+id/seekBar_band_1"
-                    android:layout_width="48dp"
-                    android:layout_height="match_parent"
-                    app:ssb_progress="50"
-                    app:ssb_segmentCount="12"
-                    app:ssb_activeColor="#04AA6D"
-                    app:ssb_inactiveColor="#1A3D2A"
-                    app:ssb_thumbColor="#FFFFFF"/>
-
-                <TextView
-                    android:id="@+id/tv_band_freq_1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="60HZ"
-                    android:textColor="#AAAAAA"
-                    android:textSize="12sp"
-                    android:layout_marginTop="4dp"/>
-            </LinearLayout>
-
-            <!-- Additional bands will follow the same pattern -->
-
-        </LinearLayout>
+            android:gravity="center_vertical" />
     </HorizontalScrollView>
 
 </LinearLayout>
