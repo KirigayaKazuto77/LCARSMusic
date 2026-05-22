@@ -266,7 +266,11 @@ class MainActivity : AppCompatActivity() {
                 val sessionId = it.getLong(MusicPlaybackService.EXTRA_AUDIO_SESSION_ID).toInt()
 
                 if (sessionId > 0) {
-                    handleVisualizerAudioSession(sessionId, "metadata")
+                    handleVisualizerAudioSession(
+                        sessionId,
+                        "metadata",
+                        forceVisualizerRebuild = true
+                    )
                 }
 
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_song_title).text = title?.uppercase()
@@ -471,35 +475,23 @@ class MainActivity : AppCompatActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun handleVisualizerAudioSession(sessionId: Int, source: String) {
+    private fun handleVisualizerAudioSession(
+        sessionId: Int,
+        source: String,
+        forceVisualizerRebuild: Boolean = false
+    ) {
         Log.d(
             MusicPlaybackService.VISUALIZER_LOG_TAG,
-            "UI_CAPTURED_AUDIO_SESSION_ID source=$source sessionId=$sessionId latest=$latestVisualizerSessionId"
+            "UI_CAPTURED_AUDIO_SESSION_ID source=$source sessionId=$sessionId latest=$latestVisualizerSessionId forceVisualizerRebuild=$forceVisualizerRebuild"
         )
 
-        val isNewSession = latestVisualizerSessionId != sessionId
         latestVisualizerSessionId = sessionId
-        if (isNewSession || EqualizerEngine.activeSessionId != sessionId) {
-            initializeEqualizerForSession(sessionId, source)
-        } else {
-            Log.d(
-                MusicPlaybackService.VISUALIZER_LOG_TAG,
-                "EQUALIZER_SETUP_SKIPPED_DUPLICATE_SESSION source=$source sessionId=$sessionId"
-            )
-        }
+        initializeEqualizerForSession(sessionId, source)
 
         if (!hasRecordAudioPermission()) {
             Log.d(
                 MusicPlaybackService.VISUALIZER_LOG_TAG,
                 "VISUALIZER_SETUP_SKIPPED_MISSING_RECORD_AUDIO source=$source sessionId=$sessionId"
-            )
-            return
-        }
-
-        if (!isNewSession && visualizerView.activeSessionId == sessionId) {
-            Log.d(
-                MusicPlaybackService.VISUALIZER_LOG_TAG,
-                "VISUALIZER_SETUP_SKIPPED_DUPLICATE_SESSION source=$source sessionId=$sessionId"
             )
             return
         }
@@ -512,7 +504,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        visualizerView.setAudioSessionId(sessionId)
+        visualizerView.setAudioSessionId(sessionId, forceRebuild = forceVisualizerRebuild)
     }
 
     private fun initializeEqualizerForSession(sessionId: Int, source: String) {

@@ -25,9 +25,14 @@ object EqualizerEngine {
 
         equalizer?.let { existingEqualizer ->
             if (activeSessionId == sessionId) {
-                enable(existingEqualizer, sessionId)
-                Log.d(TAG, "EQUALIZER_REUSED sessionId=$sessionId")
-                return existingEqualizer
+                return if (enable(existingEqualizer, sessionId)) {
+                    Log.d(TAG, "EQUALIZER_REUSED sessionId=$sessionId")
+                    existingEqualizer
+                } else {
+                    runCatching { existingEqualizer.release() }
+                    markInitializationFailed(sessionId)
+                    null
+                }
             }
         }
 
@@ -35,19 +40,23 @@ object EqualizerEngine {
 
         return try {
             @Suppress("DEPRECATION")
-            Equalizer(0, sessionId).also { newEqualizer ->
-                equalizer = newEqualizer
-                activeSessionId = sessionId
-                enable(newEqualizer, sessionId)
-                val numberOfBands = runCatching { newEqualizer.numberOfBands }.getOrNull()
-                Log.d(
-                    TAG,
-                    "EQUALIZER_INITIALIZED sessionId=$sessionId bands=$numberOfBands"
-                )
+            val newEqualizer = Equalizer(0, sessionId)
+            if (!enable(newEqualizer, sessionId)) {
+                runCatching { newEqualizer.release() }
+                markInitializationFailed(sessionId)
+                return null
             }
+
+            equalizer = newEqualizer
+            activeSessionId = sessionId
+            val numberOfBands = runCatching { newEqualizer.numberOfBands }.getOrNull()
+            Log.d(
+                TAG,
+                "EQUALIZER_INITIALIZED sessionId=$sessionId bands=$numberOfBands"
+            )
+            newEqualizer
         } catch (e: RuntimeException) {
-            equalizer = null
-            activeSessionId = 0
+            markInitializationFailed(sessionId)
             Log.e(TAG, "EQUALIZER_INIT_FAILED sessionId=$sessionId", e)
             null
         }
@@ -110,11 +119,19 @@ object EqualizerEngine {
         null
     }
 
-    private fun enable(equalizer: Equalizer, sessionId: Int) {
-        try {
+    private fun enable(equalizer: Equalizer, sessionId: Int): Boolean {
+        return try {
             equalizer.enabled = true
+            true
         } catch (e: RuntimeException) {
             Log.e(TAG, "EQUALIZER_ENABLE_FAILED sessionId=$sessionId", e)
+            false
         }
+    }
+
+    private fun markInitializationFailed(sessionId: Int) {
+        equalizer = null
+        activeSessionId = -1
+        Log.d(TAG, "EQUALIZER_MARKED_BROKEN sessionId=$sessionId")
     }
 }
