@@ -15,6 +15,7 @@ import android.media.audiofx.Equalizer
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -66,7 +67,10 @@ class MainActivity : AppCompatActivity() {
     private var currentVisualizerMode = VisualizerMode.OFF
     private var currentSelectedPresetIndex = FLAT_PRESET_INDEX
     private var lastEqualizerStateAppliedSessionId = 0
+    @Volatile
+    private var requestedEqualizerSessionId = 0
     private val equalizerBandViews = mutableListOf<EqualizerBandView>()
+    private val audioHandler = Handler(HandlerThread("AudioEffectThread").apply { start() }.looper)
 
     private enum class VisualizerMode {
         OFF,
@@ -320,6 +324,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initUI() {
         visualizerView = findViewById(R.id.visualizer_view)
+        visualizerView.setAudioHandler(audioHandler)
         tvViewTitle = findViewById(R.id.tv_view_title)
         tvCurrentTime = findViewById(R.id.tv_current_time)
         tvCurrentDate = findViewById(R.id.tv_current_date)
@@ -472,8 +477,16 @@ class MainActivity : AppCompatActivity() {
             "UI_CAPTURED_AUDIO_SESSION_ID source=$source sessionId=$sessionId latest=$latestVisualizerSessionId"
         )
 
+        val isNewSession = latestVisualizerSessionId != sessionId
         latestVisualizerSessionId = sessionId
-        applySavedEqualizerStateToHardwareIfNeeded(sessionId)
+        if (isNewSession || EqualizerEngine.activeSessionId != sessionId) {
+            initializeEqualizerForSession(sessionId, source)
+        } else {
+            Log.d(
+                MusicPlaybackService.VISUALIZER_LOG_TAG,
+                "EQUALIZER_SETUP_SKIPPED_DUPLICATE_SESSION source=$source sessionId=$sessionId"
+            )
+        }
 
         if (!hasRecordAudioPermission()) {
             Log.d(
@@ -483,7 +496,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (visualizerView.activeSessionId == sessionId) {
+        if (!isNewSession && visualizerView.activeSessionId == sessionId) {
             Log.d(
                 MusicPlaybackService.VISUALIZER_LOG_TAG,
                 "VISUALIZER_SETUP_SKIPPED_DUPLICATE_SESSION source=$source sessionId=$sessionId"
@@ -500,6 +513,41 @@ class MainActivity : AppCompatActivity() {
         }
 
         visualizerView.setAudioSessionId(sessionId)
+    }
+
+    private fun initializeEqualizerForSession(sessionId: Int, source: String) {
+        if (sessionId <= 0) return
+
+        requestedEqualizerSessionId = sessionId
+        audioHandler.post {
+            if (requestedEqualizerSessionId != sessionId) {
+                Log.d(
+                    MusicPlaybackService.VISUALIZER_LOG_TAG,
+                    "EQUALIZER_SETUP_SKIPPED_STALE_BEFORE_INIT source=$source sessionId=$sessionId requested=$requestedEqualizerSessionId"
+                )
+                return@post
+            }
+
+            val equalizer = EqualizerEngine.initialize(sessionId)
+            if (equalizer == null || requestedEqualizerSessionId != sessionId) {
+                Log.d(
+                    MusicPlaybackService.VISUALIZER_LOG_TAG,
+                    "EQUALIZER_SETUP_SKIPPED_UNAVAILABLE_OR_STALE source=$source sessionId=$sessionId requested=$requestedEqualizerSessionId"
+                )
+                return@post
+            }
+
+            applySavedEqualizerStateToHardwareIfNeeded(sessionId, equalizer)
+
+            runOnUiThread {
+                if (
+                    latestVisualizerSessionId == sessionId &&
+                    layoutEqualizer.visibility == View.VISIBLE
+                ) {
+                    setupEqualizerUI()
+                }
+            }
+        }
     }
 
     private fun resumeVisualizerIfEnabled() {
@@ -859,7 +907,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         populateEqualizerBands(equalizer, bandsContainer, btnPreset)
-        loadEqualizerState(equalizer, btnPreset)
+        updateEqualizerUiFromSavedState(equalizer, btnPreset)
         
         btnPreset.setOnClickListener { view ->
             val popup = PopupMenu(this, view)
@@ -1092,14 +1140,13 @@ class MainActivity : AppCompatActivity() {
             .apply()
     }
 
-    private fun loadEqualizerState(equalizer: Equalizer, presetButton: Button) {
+    private fun updateEqualizerUiFromSavedState(equalizer: Equalizer, presetButton: Button) {
         val savedProgressString = sharedPreferences.getString(PREF_EQUALIZER_BAND_PROGRESS, null)
         val savedProgress = parseSavedBandProgress(savedProgressString)
 
         if (savedProgressString == null) {
             currentSelectedPresetIndex = FLAT_PRESET_INDEX
             presetButton.text = "FLAT"
-            applyFlatEqualizerState(equalizer)
             refreshEqualizerBandViews(equalizer)
             return
         }
@@ -1108,15 +1155,14 @@ class MainActivity : AppCompatActivity() {
             PREF_EQUALIZER_SELECTED_PRESET_INDEX,
             FLAT_PRESET_INDEX
         )
-        applyBandProgressToEqualizer(equalizer, savedProgress)
         refreshEqualizerBandViews(equalizer)
         presetButton.text = resolveEqualizerPresetLabel(equalizer, currentSelectedPresetIndex, savedProgress)
     }
 
-    private fun applySavedEqualizerStateToHardwareIfNeeded(sessionId: Int) {
+    private fun applySavedEqualizerStateToHardwareIfNeeded(sessionId: Int, equalizer: Equalizer) {
         if (sessionId <= 0 || lastEqualizerStateAppliedSessionId == sessionId) return
+        if (requestedEqualizerSessionId != sessionId) return
 
-        val equalizer = EqualizerEngine.activeEqualizer ?: return
         val savedProgressString = sharedPreferences.getString(PREF_EQUALIZER_BAND_PROGRESS, null)
         val savedPresetIndex = sharedPreferences.getInt(
             PREF_EQUALIZER_SELECTED_PRESET_INDEX,
@@ -1326,5 +1372,8 @@ class MainActivity : AppCompatActivity() {
         timeHandler.removeCallbacks(timeRunnable)
         unregisterScreenStateReceiver()
         visualizerView.release()
+        audioHandler.post {
+            audioHandler.looper.quitSafely()
+        }
     }
 }

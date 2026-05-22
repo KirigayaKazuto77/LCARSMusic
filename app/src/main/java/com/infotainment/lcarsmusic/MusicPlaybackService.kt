@@ -10,6 +10,8 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
@@ -34,7 +36,11 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     
     private lateinit var mediaSession: MediaSessionCompat
     private var currentPlayingUri: Uri? = null
+    @Volatile
     private var latestAudioSessionId: Int = 0
+    private val audioEffectHandler = Handler(
+        HandlerThread("PlaybackAudioEffectThread").apply { start() }.looper
+    )
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
@@ -163,7 +169,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                 mediaPlayer?.prepare()
                 currentPlayingUri = song.uri
                 latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
-                EqualizerEngine.initialize(latestAudioSessionId)
+                initializeEqualizerForSession(latestAudioSessionId)
                 Log.d(
                     VISUALIZER_LOG_TAG,
                     "SERVICE_CAPTURED_AUDIO_SESSION_ID sessionId=$latestAudioSessionId title=${song.title}"
@@ -177,6 +183,22 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    private fun initializeEqualizerForSession(sessionId: Int) {
+        if (sessionId <= 0) return
+
+        audioEffectHandler.post {
+            if (latestAudioSessionId != sessionId) {
+                Log.d(
+                    VISUALIZER_LOG_TAG,
+                    "SERVICE_EQUALIZER_INIT_SKIPPED_STALE sessionId=$sessionId latest=$latestAudioSessionId"
+                )
+                return@post
+            }
+
+            EqualizerEngine.initialize(sessionId)
         }
     }
 
@@ -441,7 +463,10 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         super.onDestroy()
         serviceScope.cancel()
         mediaSession.release()
-        EqualizerEngine.release()
+        audioEffectHandler.post {
+            EqualizerEngine.release()
+            audioEffectHandler.looper.quitSafely()
+        }
         mediaPlayer?.release()
         mediaPlayer = null
         abandonAudioFocus()

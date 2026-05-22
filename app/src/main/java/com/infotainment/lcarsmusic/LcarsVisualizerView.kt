@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.media.audiofx.Visualizer
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -26,12 +28,21 @@ class LcarsVisualizerView @JvmOverloads constructor(
     private var visualizer: Visualizer? = null
     private var waveformData: ByteArray? = null
     private var fftData: ByteArray? = null
+    @Volatile
     private var isPaused = false
+    @Volatile
     private var isPlaybackActive = false
+    @Volatile
     private var isDecayingToZero = false
+    @Volatile
     private var isResting = false
     private var decayAnimator: ValueAnimator? = null
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private var audioHandler: Handler? = null
+    @Volatile
+    private var requestedSessionId = 0
 
+    @Volatile
     var activeSessionId: Int = 0
         private set
 
@@ -52,35 +63,40 @@ class LcarsVisualizerView @JvmOverloads constructor(
             postInvalidateOnAnimation()
         }
 
+    fun setAudioHandler(handler: Handler) {
+        audioHandler = handler
+    }
+
     fun setAudioSessionId(sessionId: Int) {
         Log.d(TAG, "VIEW_SET_AUDIO_SESSION_REQUEST sessionId=$sessionId paused=$isPaused")
+        requestedSessionId = sessionId
         activeSessionId = sessionId
 
         if (sessionId <= 0) {
             Log.d(TAG, "VIEW_SET_AUDIO_SESSION_SKIPPED_INVALID sessionId=$sessionId")
-            releaseVisualizer(clearSession = true)
+            releaseVisualizerAsync(clearSession = true)
             return
         }
 
         if (!hasRecordAudioPermission()) {
             Log.d(TAG, "VIEW_SET_AUDIO_SESSION_SKIPPED_MISSING_RECORD_AUDIO sessionId=$sessionId")
-            releaseVisualizer(clearSession = false)
+            releaseVisualizerAsync(clearSession = false)
             return
         }
 
         if (isPaused) {
             Log.d(TAG, "VIEW_SET_AUDIO_SESSION_DEFERRED_WHILE_PAUSED sessionId=$sessionId")
-            releaseVisualizer(clearSession = false)
+            releaseVisualizerAsync(clearSession = false)
             return
         }
 
-        initializeVisualizer(sessionId)
+        initializeVisualizerAsync(sessionId)
     }
 
     fun pause() {
         isPaused = true
         Log.d(TAG, "VIEW_PAUSE_RELEASE_VISUALIZER sessionId=$activeSessionId")
-        releaseVisualizer(clearSession = false)
+        releaseVisualizerAsync(clearSession = false)
     }
 
     fun resume() {
@@ -91,7 +107,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
         Log.d(TAG, "VIEW_RESUME_VISUALIZER sessionId=$activeSessionId")
 
         if (activeSessionId > 0 && hasRecordAudioPermission()) {
-            initializeVisualizer(activeSessionId)
+            initializeVisualizerAsync(activeSessionId)
         } else {
             Log.d(
                 TAG,
@@ -103,19 +119,32 @@ class LcarsVisualizerView @JvmOverloads constructor(
     fun release() {
         Log.d(TAG, "VIEW_RELEASE_VISUALIZER sessionId=$activeSessionId")
         cancelDecayAnimation()
-        releaseVisualizer(clearSession = true)
+        requestedSessionId = 0
+        releaseVisualizerAsync(clearSession = true)
     }
 
     fun onPlaybackResumed() {
         isPlaybackActive = true
         isResting = false
         cancelDecayAnimation()
-        visualizer?.enabled = true
+        postAudioEffectWork {
+            runCatching {
+                visualizer?.enabled = true
+            }.onFailure { error ->
+                Log.d(TAG, "VISUALIZER_ENABLE_ON_RESUME_FAILED sessionId=$activeSessionId", error)
+            }
+        }
     }
 
     fun onPlaybackPaused() {
         isPlaybackActive = false
-        visualizer?.enabled = false
+        postAudioEffectWork {
+            runCatching {
+                visualizer?.enabled = false
+            }.onFailure { error ->
+                Log.d(TAG, "VISUALIZER_DISABLE_ON_PAUSE_FAILED sessionId=$activeSessionId", error)
+            }
+        }
         animateToZero()
     }
 
@@ -165,9 +194,23 @@ class LcarsVisualizerView @JvmOverloads constructor(
         }
     }
 
-    private fun initializeVisualizer(sessionId: Int) {
+    private fun initializeVisualizerAsync(sessionId: Int) {
+        postAudioEffectWork {
+            initializeVisualizerOnAudioThread(sessionId)
+        }
+    }
+
+    private fun initializeVisualizerOnAudioThread(sessionId: Int) {
+        if (sessionId != requestedSessionId || isPaused) {
+            Log.d(
+                TAG,
+                "VISUALIZER_INITIALIZATION_SKIPPED_STALE sessionId=$sessionId requested=$requestedSessionId paused=$isPaused"
+            )
+            return
+        }
+
         Log.d(TAG, "VISUALIZER_INITIALIZATION_START sessionId=$sessionId")
-        releaseVisualizer(clearSession = false)
+        releaseVisualizerOnAudioThread(clearSession = false)
 
         try {
             val maxCaptureRate = Visualizer.getMaxCaptureRate()
@@ -194,10 +237,15 @@ class LcarsVisualizerView @JvmOverloads constructor(
                             TAG,
                             "WAVEFORM_CAPTURE size=${waveform?.size ?: 0} sample=${sampleBytes(waveform)} samplingRate=$samplingRate"
                         )
-                        if (mode == Mode.TIME_DOMAIN && waveform != null && waveform.isNotEmpty()) {
-                            cancelDecayAnimation()
-                            waveformData = waveform
-                            postInvalidateOnAnimation()
+                        if (waveform != null && waveform.isNotEmpty()) {
+                            val capturedWaveform = waveform.clone()
+                            uiHandler.post {
+                                if (mode == Mode.TIME_DOMAIN && !isDecayingToZero && !isResting) {
+                                    cancelDecayAnimation()
+                                    waveformData = capturedWaveform
+                                    postInvalidateOnAnimation()
+                                }
+                            }
                         }
                     }
 
@@ -212,10 +260,15 @@ class LcarsVisualizerView @JvmOverloads constructor(
                             TAG,
                             "FFT_CAPTURE size=${fft?.size ?: 0} sample=${sampleBytes(fft)} samplingRate=$samplingRate"
                         )
-                        if (mode == Mode.FREQUENCY_DOMAIN && fft != null && fft.isNotEmpty()) {
-                            cancelDecayAnimation()
-                            fftData = fft
-                            postInvalidateOnAnimation()
+                        if (fft != null && fft.isNotEmpty()) {
+                            val capturedFft = fft.clone()
+                            uiHandler.post {
+                                if (mode == Mode.FREQUENCY_DOMAIN && !isDecayingToZero && !isResting) {
+                                    cancelDecayAnimation()
+                                    fftData = capturedFft
+                                    postInvalidateOnAnimation()
+                                }
+                            }
                         }
                     }
                 },
@@ -224,22 +277,37 @@ class LcarsVisualizerView @JvmOverloads constructor(
                 true
             )
             nativeVisualizer.enabled = isPlaybackActive
+            if (sessionId != requestedSessionId || isPaused) {
+                nativeVisualizer.enabled = false
+                nativeVisualizer.release()
+                Log.d(
+                    TAG,
+                    "VISUALIZER_INITIALIZATION_DISCARDED_STALE sessionId=$sessionId requested=$requestedSessionId paused=$isPaused"
+                )
+                return
+            }
             visualizer = nativeVisualizer
 
             Log.d(TAG, "VISUALIZER_INITIALIZATION_SUCCESS sessionId=$sessionId enabled=${nativeVisualizer.enabled}")
         } catch (e: IllegalStateException) {
             Log.d(TAG, "VISUALIZER_INITIALIZATION_FAILED_ILLEGAL_STATE sessionId=$sessionId", e)
-            releaseVisualizer(clearSession = false)
+            releaseVisualizerOnAudioThread(clearSession = false)
         } catch (e: RuntimeException) {
             Log.d(TAG, "VISUALIZER_INITIALIZATION_FAILED_RUNTIME sessionId=$sessionId", e)
-            releaseVisualizer(clearSession = false)
+            releaseVisualizerOnAudioThread(clearSession = false)
         } catch (e: Exception) {
             Log.d(TAG, "VISUALIZER_INITIALIZATION_FAILED_EXCEPTION sessionId=$sessionId", e)
-            releaseVisualizer(clearSession = false)
+            releaseVisualizerOnAudioThread(clearSession = false)
         }
     }
 
-    private fun releaseVisualizer(clearSession: Boolean) {
+    private fun releaseVisualizerAsync(clearSession: Boolean) {
+        postAudioEffectWork {
+            releaseVisualizerOnAudioThread(clearSession)
+        }
+    }
+
+    private fun releaseVisualizerOnAudioThread(clearSession: Boolean) {
         val existingVisualizer = visualizer
         visualizer = null
 
@@ -259,7 +327,17 @@ class LcarsVisualizerView @JvmOverloads constructor(
 
         if (clearSession) {
             activeSessionId = 0
+            requestedSessionId = 0
         }
+    }
+
+    private fun postAudioEffectWork(block: () -> Unit) {
+        val handler = audioHandler
+        if (handler == null) {
+            Log.w(TAG, "VISUALIZER_AUDIO_HANDLER_MISSING")
+            return
+        }
+        handler.post(block)
     }
 
     private fun getSafeCaptureSize(): Int {
