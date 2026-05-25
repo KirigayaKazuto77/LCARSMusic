@@ -55,8 +55,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvCurrentDate: TextView
     
     private lateinit var mainViewContainer: FrameLayout
-    private lateinit var btnVisualizerFrequencyDomain: Button
-    private lateinit var btnVisualizerTimeDomain: Button
+    private lateinit var btnVisualizerFrequencyDomain: LinearLayout
+    private lateinit var btnVisualizerTimeDomain: LinearLayout
+
+    // Add the inner blocks we need to tint dynamically
+    private lateinit var freqTombstone: View
+    private lateinit var freqContainer: FrameLayout
+    private lateinit var timeContainer: FrameLayout
+    private lateinit var timeTombstone: View
     
     // Media Browser and Controller
     private lateinit var mediaBrowser: MediaBrowserCompat
@@ -262,8 +268,9 @@ class MainActivity : AppCompatActivity() {
                 val artist = it.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
                 val album = it.getString(MediaMetadataCompat.METADATA_KEY_ALBUM)
                 val playlist = it.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE)
-                val duration = it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                val trackDuration = it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
                 val sessionId = it.getLong(MusicPlaybackService.EXTRA_AUDIO_SESSION_ID).toInt()
+                val INSIGNIA_ROTATION_DURATION = 5000L
 
                 if (sessionId > 0) {
                     handleVisualizerAudioSession(
@@ -278,11 +285,34 @@ class MainActivity : AppCompatActivity() {
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_album_name).text = album?.uppercase()
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_playlist_name).text = "PLAYLIST: ${playlist?.uppercase()}"
 
+                val albumArt = it.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+                val ivMediaArt = layoutNowPlaying.findViewById<ImageView>(R.id.iv_media_art)
+                ivMediaArt.cameraDistance = 8000f
+
+                if (albumArt != null) {
+                    ivMediaArt.setImageBitmap(albumArt)
+                    ivMediaArt.rotationY = 0f // Reset the 3D rotation when real art is present
+                    ivMediaArt.clearAnimation()
+                } else {
+                    ivMediaArt.setImageResource(R.drawable.federation)
+
+                    // Create an animator that targets the Y-axis rotation property
+                    val flipAnimator = android.animation.ObjectAnimator.ofFloat(ivMediaArt, "rotationY", 0f, 360f)
+
+                    // We use a literal value (3000L) to avoid declaring a 'duration' variable entirely.
+                    // This property is a system-required setting for the animator.
+                    flipAnimator.duration = 15000L
+
+                    flipAnimator.repeatCount = android.animation.ValueAnimator.INFINITE
+                    flipAnimator.interpolator = android.view.animation.LinearInterpolator()
+                    flipAnimator.start()
+                }
+
                 val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
-                seekBar.max = duration.toInt()
+                seekBar.max = trackDuration.toInt()
                 seekBar.progress = 0
                 findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(0L)
-                findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(duration)
+                findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(trackDuration)
 
                 // Update Library Highlight and Scroll
                 mediaId?.toLongOrNull()?.let { id ->
@@ -330,8 +360,8 @@ class MainActivity : AppCompatActivity() {
         visualizerView = findViewById(R.id.visualizer_view)
         visualizerView.setAudioHandler(audioHandler)
         tvViewTitle = findViewById(R.id.tv_view_title)
-        tvCurrentTime = findViewById(R.id.tv_current_time)
-        tvCurrentDate = findViewById(R.id.tv_current_date)
+//        tvCurrentTime = findViewById(R.id.tv_current_time)
+//        tvCurrentDate = findViewById(R.id.tv_current_date)
         mainViewContainer = findViewById(R.id.main_view_container)
 
         // Inflate sub-views
@@ -357,6 +387,12 @@ class MainActivity : AppCompatActivity() {
 
         btnVisualizerFrequencyDomain = findViewById(R.id.btn_visualizer_frequency_domain)
         btnVisualizerTimeDomain = findViewById(R.id.btn_visualizer_time_domain)
+
+        // Bind the new shape layers
+        freqTombstone = findViewById(R.id.freq_tombstone)
+        freqContainer = findViewById(R.id.freq_container)
+        timeContainer = findViewById(R.id.time_container)
+        timeTombstone = findViewById(R.id.time_tombstone)
 
         btnVisualizerFrequencyDomain.setOnClickListener {
             val nextMode = if (currentVisualizerMode == VisualizerMode.FREQUENCY_DOMAIN) {
@@ -398,24 +434,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val selectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_selected)
-        val unselectedColor = ContextCompat.getColor(this, R.color.lcars_visualizer_mode_unselected)
+        // LCARS Colors
+        val inactiveTombstoneColor = Color.parseColor("#4E81E0")
+        val inactiveContainerColor = Color.parseColor("#37A7EC")
+
+        // Two distinct shades of yellow for the active state
+        val activeTombstoneColor = Color.parseColor("#FF9900") // Orange/Yellow
+        val activeContainerColor = Color.parseColor("#FFCC00") // Bright Yellow
 
         val frequencySelected = mode == VisualizerMode.FREQUENCY_DOMAIN
         val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 
-        btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(
-            if (frequencySelected) selectedColor else unselectedColor
+        // Tint Frequency Domain Button Layout
+        freqTombstone.backgroundTintList = ColorStateList.valueOf(
+            if (frequencySelected) activeTombstoneColor else inactiveTombstoneColor
         )
-        btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(
-            if (timeSelected) selectedColor else unselectedColor
+        freqContainer.backgroundTintList = ColorStateList.valueOf(
+            if (frequencySelected) activeContainerColor else inactiveContainerColor
         )
 
-        btnVisualizerFrequencyDomain.setTextColor(
-            ContextCompat.getColor(this, if (frequencySelected) android.R.color.black else android.R.color.white)
+        // Tint Time Domain Button Layout
+        timeTombstone.backgroundTintList = ColorStateList.valueOf(
+            if (timeSelected) activeTombstoneColor else inactiveTombstoneColor
         )
-        btnVisualizerTimeDomain.setTextColor(
-            ContextCompat.getColor(this, if (timeSelected) android.R.color.black else android.R.color.white)
+        timeContainer.backgroundTintList = ColorStateList.valueOf(
+            if (timeSelected) activeContainerColor else inactiveContainerColor
         )
     }
 
@@ -1325,8 +1368,8 @@ class MainActivity : AppCompatActivity() {
         val dateFormat = SimpleDateFormat("MMM. dd, yyyy", Locale.US)
         val now = Date()
         
-        tvCurrentTime.text = timeFormat.format(now).uppercase()
-        tvCurrentDate.text = dateFormat.format(now).uppercase()
+//        tvCurrentTime.text = timeFormat.format(now).uppercase()
+//        tvCurrentDate.text = dateFormat.format(now).uppercase()
     }
 
     private fun startClock() {

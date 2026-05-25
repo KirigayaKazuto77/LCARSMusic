@@ -158,6 +158,7 @@ The right panel will take up 100% of the height and 75% of the width of the scre
 
 
 To be implemented:
+- Bluetooth Support
 - Preset Selector Popup and Dismissal Animation
 - When the Audio Visualizer is of, Show a rotating Starfleet Inignia
 - Bass Boost in Equalizer

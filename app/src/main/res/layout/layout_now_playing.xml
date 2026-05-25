@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:padding="16dp"
     android:background="#000000">
 
-    <!-- Media Art -->
-    <ImageView
-        android:id="@+id/iv_media_art"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:scaleType="centerInside"
-        android:src="@android:drawable/ic_menu_gallery"
-        android:background="#1A1A1A" />
+    <com.infotainment.lcarsmusic.LcarsFrame
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_margin="15dp"
+        app:layout_constraintBottom_toTopOf="@+id/layout_visualizer_mode_toggle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Media Art -->
+        <ImageView
+            android:id="@+id/iv_media_art"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:scaleType="centerInside"
+            android:src="@android:drawable/ic_menu_gallery" />
+
+    </com.infotainment.lcarsmusic.LcarsFrame>
 
     <!-- Media Details -->
     <LinearLayout

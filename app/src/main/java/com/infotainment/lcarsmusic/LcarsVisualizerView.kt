@@ -16,7 +16,12 @@ import android.util.Log
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import androidx.core.content.ContextCompat
+import kotlin.math.ceil
+import kotlin.math.exp
+import kotlin.math.floor
 import kotlin.math.hypot
+import kotlin.math.ln
+import kotlin.math.log10
 import kotlin.math.roundToInt
 
 class LcarsVisualizerView @JvmOverloads constructor(
@@ -29,6 +34,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
     private var visualizer: Visualizer? = null
     private var waveformData: ByteArray? = null
     private var fftData: ByteArray? = null
+    private var fftDisplayHeights = FloatArray(0)
     @Volatile
     private var isPaused = false
     @Volatile
@@ -185,6 +191,7 @@ class LcarsVisualizerView @JvmOverloads constructor(
                 override fun onAnimationEnd(animation: Animator) {
                     if (!wasCanceled) {
                         fftData?.fill(0)
+                        fftDisplayHeights.fill(0f)
                         waveformData?.fill(WAVEFORM_CENTER.toByte())
                         isResting = true
                         invalidate()
@@ -467,29 +474,104 @@ class LcarsVisualizerView @JvmOverloads constructor(
         val data = fftData ?: return
         val width = width.toFloat()
         val height = (height - paddingBottom).coerceAtLeast(0).toFloat()
+        if (width <= 0f || height <= 0f || data.size < 2) return
         
         // FFT data format: [real0, imag0, real1, imag1, ...]
-        // We calculate magnitude for each frequency bin
         val numBins = data.size / 2
-        val barWidth = width / numBins
+        if (numBins <= 0) return
 
-        for (i in 0 until numBins) {
-            val r = data[i * 2].toInt()
-            val im = data[i * 2 + 1].toInt()
-            val magnitude = hypot(r.toDouble(), im.toDouble()).toFloat()
-            
-            // Normalize magnitude (empirical scaling)
-            val barHeight = (magnitude / 128f) * height
-            
-            val x = i * barWidth
+        val targetBarWidth = FFT_TARGET_BAR_WIDTH_DP * resources.displayMetrics.density
+        val visualBarCount = minOf(numBins, maxOf(1, (width / targetBarWidth).toInt()))
+        val barWidth = width / visualBarCount
+        val logBinCount = ln(numBins.toDouble())
+        val targetHeights = FloatArray(visualBarCount)
+        val fallAmount = height * FFT_BAR_DECAY_FRACTION
+        var hasFallingBars = false
+
+        if (fftDisplayHeights.size != visualBarCount) {
+            fftDisplayHeights = FloatArray(visualBarCount)
+        }
+
+        for (barIndex in 0 until visualBarCount) {
+            val startRatio = barIndex.toDouble() / visualBarCount
+            val endRatio = (barIndex + 1).toDouble() / visualBarCount
+            val startBin = floor(exp(startRatio * logBinCount) - 1.0)
+                .toInt()
+                .coerceIn(0, numBins - 1)
+            val endBinExclusive = ceil(exp(endRatio * logBinCount) - 1.0)
+                .toInt()
+                .coerceIn(startBin + 1, numBins)
+
+            var magnitudeSum = 0f
+            var peakMagnitude = 0f
+            var magnitudeCount = 0
+
+            for (binIndex in startBin until endBinExclusive) {
+                val realIndex = binIndex * 2
+                val imaginaryIndex = realIndex + 1
+                if (imaginaryIndex >= data.size) break
+
+                val real = data[realIndex].toInt()
+                val imaginary = data[imaginaryIndex].toInt()
+                val magnitude = hypot(real.toDouble(), imaginary.toDouble()).toFloat()
+
+                magnitudeSum += magnitude
+                peakMagnitude = maxOf(peakMagnitude, magnitude)
+                magnitudeCount += 1
+            }
+
+            val averageMagnitude = if (magnitudeCount > 0) {
+                magnitudeSum / magnitudeCount
+            } else {
+                0f
+            }
+            val hybridMagnitude = (averageMagnitude * FFT_AVERAGE_WEIGHT) +
+                (peakMagnitude * FFT_PEAK_WEIGHT)
+
+            val barPosition = barIndex.toFloat() / visualBarCount
+            val frequencyWeight = 1f + (barPosition * FFT_HIGH_FREQUENCY_GAIN)
+            val weightedMagnitude = hybridMagnitude * frequencyWeight
+            val scaledMagnitude = log10(1f + weightedMagnitude)
+
+            targetHeights[barIndex] = ((scaledMagnitude / FFT_LOG_MAGNITUDE_SCALE) * height)
+                .coerceIn(0f, height)
+        }
+
+        for (barIndex in 0 until visualBarCount) {
+            val targetHeight = when {
+                visualBarCount == 1 -> targetHeights[barIndex]
+                barIndex == 0 -> (targetHeights[barIndex] + targetHeights[barIndex + 1]) / 2f
+                barIndex == visualBarCount - 1 -> (targetHeights[barIndex - 1] + targetHeights[barIndex]) / 2f
+                else -> (targetHeights[barIndex - 1] * FFT_INTERPOLATION_SIDE_WEIGHT) +
+                    (targetHeights[barIndex] * FFT_INTERPOLATION_CENTER_WEIGHT) +
+                    (targetHeights[barIndex + 1] * FFT_INTERPOLATION_SIDE_WEIGHT)
+            }.coerceIn(0f, height)
+            val currentHeight = fftDisplayHeights[barIndex]
+            val displayHeight = if (targetHeight >= currentHeight) {
+                targetHeight
+            } else {
+                maxOf(targetHeight, currentHeight - fallAmount)
+            }
+
+            fftDisplayHeights[barIndex] = displayHeight
+            if (displayHeight > targetHeight) {
+                hasFallingBars = true
+            }
+
+            val x = barIndex * barWidth
+            val right = (x + barWidth - 1f).coerceAtLeast(x + 1f).coerceAtMost(width)
             // Draw unidirectional bar extending upward
             canvas.drawRect(
                 x,
-                height - barHeight,
-                x + barWidth - 1,
+                height - displayHeight,
+                right,
                 height,
                 paint
             )
+        }
+
+        if (hasFallingBars) {
+            postInvalidateOnAnimation()
         }
     }
 
@@ -540,5 +622,14 @@ class LcarsVisualizerView @JvmOverloads constructor(
         const val AUDIO_DRIVER_RELEASE_DELAY_MS = 50L
         const val CAPTURE_LOG_FRAME_INTERVAL = 50
         const val WAVEFORM_CENTER = 128
+        const val FFT_TARGET_BAR_WIDTH_DP = 3f
+        const val FFT_MAGNITUDE_SCALE = 128f
+        const val FFT_AVERAGE_WEIGHT = 0.7f
+        const val FFT_PEAK_WEIGHT = 0.3f
+        const val FFT_HIGH_FREQUENCY_GAIN = 2f
+        const val FFT_LOG_MAGNITUDE_SCALE = 2.5854607f
+        const val FFT_INTERPOLATION_CENTER_WEIGHT = 0.5f
+        const val FFT_INTERPOLATION_SIDE_WEIGHT = 0.25f
+        const val FFT_BAR_DECAY_FRACTION = 0.08f
     }
 }

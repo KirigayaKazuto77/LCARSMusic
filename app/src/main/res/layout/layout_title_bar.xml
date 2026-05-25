@@ -1,48 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:background="#1A1A1A">
+    android:background="#000000">
+
+    <View
+        android:id="@+id/y_bar"
+        android:layout_width="125dp"
+        android:layout_height="40dp"
+        android:layout_marginBottom="5dp"
+        android:background="#0000FF"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/l_shape"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <ImageView
+        android:id="@+id/l_shape"
+        android:layout_width="165dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_l_shape"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/y_bar"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextClock
+        android:id="@+id/tc_time"
+        android:layout_width="wrap_content"
+        android:layout_height="62sp"
+        android:layout_marginStart="5dp"
+        android:format12Hour="hh:mm:ss aa"
+        android:textColor="#FFFFFF"
+        android:textSize="66sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-condensed"
+        android:textScaleX="0.5"
+        android:textAllCaps="true"
+        android:includeFontPadding="false"
+        android:gravity="fill_vertical"
+        app:layout_constraintStart_toEndOf="@+id/l_shape"
+        app:layout_constraintBottom_toBottomOf="@+id/x_bar" />
+
+    <View
+        android:id="@+id/x_bar"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="5dp"
+        android:background="#0000FF"
+        app:layout_constraintWidth_min="50dp"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@+id/tc_time"
+        app:layout_constraintEnd_toStartOf="@+id/tv_view_title"
+        app:layout_constraintBottom_toBottomOf="@+id/l_shape" />
 
     <TextView
         android:id="@+id/tv_view_title"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_alignParentStart="true"
-        android:gravity="center_vertical"
+        android:layout_height="62dp"
+        android:layout_marginStart="5dp"
+        android:paddingTop="-50dp"
         android:text="VIEW TITLE"
-        android:textAllCaps="true"
         android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textSize="66sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-condensed"
+        android:textAllCaps="true"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textScaleX="0.5"
+        android:includeFontPadding="false"
+        android:gravity="fill_vertical"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintStart_toEndOf="@+id/x_bar"
+        app:layout_constraintEnd_toStartOf="@+id/tombstone"
+        app:layout_constraintBottom_toBottomOf="@+id/x_bar" />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_alignParentEnd="true"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+    <View
+        android:id="@+id/tombstone"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="5dp"
+        android:background="@drawable/bg_tombstone_right"
+        app:layout_constraintStart_toEndOf="@+id/tv_view_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/l_shape" />
 
-        <TextView
-            android:id="@+id/tv_current_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="12:00 PM"
-            android:textAllCaps="true"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:layout_marginEnd="16dp"/>
-
-        <TextView
-            android:id="@+id/tv_current_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DEC. 04, 2026"
-            android:textAllCaps="true"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp" />
-    </LinearLayout>
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
