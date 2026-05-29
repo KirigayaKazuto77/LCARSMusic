@@ -2,16 +2,17 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111">
+    android:background="@color/black"
+    android:paddingVertical="30dp"
+    android:paddingHorizontal="30dp">
 
     <com.infotainment.lcarsmusic.LcarsFrame
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_margin="15dp"
-        app:layout_constraintBottom_toTopOf="@+id/layout_visualizer_mode_toggle"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -19,94 +20,8 @@
         <com.infotainment.lcarsmusic.LcarsVisualizerView
             android:id="@+id/visualizer_view"
             android:layout_width="200dp"
-            android:layout_height="200dp" />
+            android:layout_height="180dp" />
 
     </com.infotainment.lcarsmusic.LcarsFrame>
-
-    <LinearLayout
-        android:id="@+id/layout_visualizer_mode_toggle"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom"
-        android:layout_margin="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_editor_absoluteX="8dp">
-
-        <LinearLayout
-            android:id="@+id/btn_visualizer_frequency_domain"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:clickable="true"
-            android:focusable="true">
-
-            <View
-                android:id="@+id/freq_tombstone"
-                android:layout_width="40dp"
-                android:layout_height="match_parent"
-                android:background="@drawable/bttn_tombstone_left" />
-
-            <FrameLayout
-                android:id="@+id/freq_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="5dp"
-                android:layout_marginEnd="5dp"
-                android:background="#FFFFFF"
-                android:paddingEnd="4dp"
-                android:paddingBottom="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|end"
-                    android:text="FREQ. DOMAIN"
-                    android:textColor="#000000"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:scaleY="2.0" />
-            </FrameLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btn_visualizer_time_domain"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:clickable="true"
-            android:focusable="true">
-
-            <FrameLayout
-                android:id="@+id/time_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginEnd="5dp"
-                android:background="#FFFFFF"
-                android:paddingStart="4dp"
-                android:paddingBottom="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|start"
-                    android:text="TIME DOMAIN"
-                    android:textColor="#000000"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:scaleY="2.0" />
-            </FrameLayout>
-
-            <View
-                android:id="@+id/time_tombstone"
-                android:layout_width="40dp"
-                android:layout_height="match_parent"
-                android:background="@drawable/bttn_tombstone_right" />
-        </LinearLayout>
-
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

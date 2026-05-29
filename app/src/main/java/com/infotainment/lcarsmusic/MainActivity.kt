@@ -32,7 +32,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -43,6 +42,14 @@ class MainActivity : AppCompatActivity() {
         const val PREF_EQUALIZER_BAND_PROGRESS = "PREF_EQUALIZER_BAND_PROGRESS"
         const val CUSTOM_PRESET_INDEX = -1
         const val FLAT_PRESET_INDEX = 0
+
+        // Navigation button default colors (from layout_navigation_menu.xml)
+        val NAV_BUTTON_COLORS = mapOf(
+            "NOW PLAYING" to Pair("#6699FF", "#5566ff"),
+            "LIBRARY" to Pair("#2266FF", "#88BBFF"),
+            "PLAYLIST" to Pair("#4E81E0", "#5566FF"),
+            "EQUALIZER" to Pair("#88BBFF", "#8899FF")
+        )
     }
 
     private lateinit var audioManager: AudioManager
@@ -51,18 +58,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var visualizerView: LcarsVisualizerView
     
     private lateinit var tvViewTitle: TextView
-    private lateinit var tvCurrentTime: TextView
-    private lateinit var tvCurrentDate: TextView
     
     private lateinit var mainViewContainer: FrameLayout
-    private lateinit var btnVisualizerFrequencyDomain: LinearLayout
-    private lateinit var btnVisualizerTimeDomain: LinearLayout
 
-    // Add the inner blocks we need to tint dynamically
-    private lateinit var freqTombstone: View
-    private lateinit var freqContainer: FrameLayout
-    private lateinit var timeContainer: FrameLayout
-    private lateinit var timeTombstone: View
+    private lateinit var btnVisualizerFrequencyDomain: FrameLayout
+    private lateinit var btnVisualizerTimeDomain: FrameLayout
     
     // Media Browser and Controller
     private lateinit var mediaBrowser: MediaBrowserCompat
@@ -142,14 +142,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutLibrary: View
     private lateinit var layoutPlaylist: View
     private lateinit var layoutEqualizer: View
-
-    private val timeHandler = Handler(Looper.getMainLooper())
-    private val timeRunnable = object : Runnable {
-        override fun run() {
-            updateTimeAndDate()
-            timeHandler.postDelayed(this, 1000)
-        }
-    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -360,8 +352,6 @@ class MainActivity : AppCompatActivity() {
         visualizerView = findViewById(R.id.visualizer_view)
         visualizerView.setAudioHandler(audioHandler)
         tvViewTitle = findViewById(R.id.tv_view_title)
-//        tvCurrentTime = findViewById(R.id.tv_current_time)
-//        tvCurrentDate = findViewById(R.id.tv_current_date)
         mainViewContainer = findViewById(R.id.main_view_container)
 
         // Inflate sub-views
@@ -387,12 +377,6 @@ class MainActivity : AppCompatActivity() {
 
         btnVisualizerFrequencyDomain = findViewById(R.id.btn_visualizer_frequency_domain)
         btnVisualizerTimeDomain = findViewById(R.id.btn_visualizer_time_domain)
-
-        // Bind the new shape layers
-        freqTombstone = findViewById(R.id.freq_tombstone)
-        freqContainer = findViewById(R.id.freq_container)
-        timeContainer = findViewById(R.id.time_container)
-        timeTombstone = findViewById(R.id.time_tombstone)
 
         btnVisualizerFrequencyDomain.setOnClickListener {
             val nextMode = if (currentVisualizerMode == VisualizerMode.FREQUENCY_DOMAIN) {
@@ -446,18 +430,12 @@ class MainActivity : AppCompatActivity() {
         val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 
         // Tint Frequency Domain Button Layout
-        freqTombstone.backgroundTintList = ColorStateList.valueOf(
-            if (frequencySelected) activeTombstoneColor else inactiveTombstoneColor
-        )
-        freqContainer.backgroundTintList = ColorStateList.valueOf(
+        btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(
             if (frequencySelected) activeContainerColor else inactiveContainerColor
         )
 
         // Tint Time Domain Button Layout
-        timeTombstone.backgroundTintList = ColorStateList.valueOf(
-            if (timeSelected) activeTombstoneColor else inactiveTombstoneColor
-        )
-        timeContainer.backgroundTintList = ColorStateList.valueOf(
+        btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(
             if (timeSelected) activeContainerColor else inactiveContainerColor
         )
     }
@@ -507,7 +485,6 @@ class MainActivity : AppCompatActivity() {
             }
             
             switchView("NOW PLAYING")
-            startClock()
         }
     }
 
@@ -622,10 +599,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupNavigation() {
-        findViewById<Button>(R.id.btn_now_playing).setOnClickListener { switchView("NOW PLAYING") }
-        findViewById<Button>(R.id.btn_library).setOnClickListener { switchView("LIBRARY") }
-        findViewById<Button>(R.id.btn_playlist).setOnClickListener { switchView("PLAYLIST") }
-        findViewById<Button>(R.id.btn_equalizer).setOnClickListener { switchView("EQUALIZER") }
+        findViewById<LinearLayout>(R.id.btn_now_playing).setOnClickListener { switchView("NOW PLAYING") }
+        findViewById<LinearLayout>(R.id.btn_library).setOnClickListener { switchView("LIBRARY") }
+        findViewById<LinearLayout>(R.id.btn_playlist).setOnClickListener { switchView("PLAYLIST") }
+        findViewById<LinearLayout>(R.id.btn_equalizer).setOnClickListener { switchView("EQUALIZER") }
     }
 
     private fun switchView(viewName: String) {
@@ -652,24 +629,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateNavigationSelection(viewName: String) {
         val selectedColor = ContextCompat.getColor(this, android.R.color.holo_orange_light)
-        val defaultColor = ContextCompat.getColor(this, android.R.color.darker_gray)
-        val selectedTextColor = ContextCompat.getColor(this, android.R.color.black)
-        val defaultTextColor = ContextCompat.getColor(this, android.R.color.white)
 
         val navButtons = mapOf(
-            "NOW PLAYING" to findViewById<Button>(R.id.btn_now_playing),
-            "LIBRARY" to findViewById<Button>(R.id.btn_library),
-            "PLAYLIST" to findViewById<Button>(R.id.btn_playlist),
-            "EQUALIZER" to findViewById<Button>(R.id.btn_equalizer)
+            "NOW PLAYING" to Pair(findViewById<View>(R.id.tombstone_now_playing), findViewById<FrameLayout>(R.id.label_container_now_playing)),
+            "LIBRARY" to Pair(findViewById<View>(R.id.tombstone_library), findViewById<FrameLayout>(R.id.label_container_library)),
+            "PLAYLIST" to Pair(findViewById<View>(R.id.tombstone_playlist), findViewById<FrameLayout>(R.id.label_container_playlist)),
+            "EQUALIZER" to Pair(findViewById<View>(R.id.tombstone_equalizer), findViewById<FrameLayout>(R.id.label_container_equalizer))
         )
 
-        navButtons.forEach { (name, button) ->
+        navButtons.forEach { (name, views) ->
             val isSelected = name == viewName
-            button.isSelected = isSelected
-            button.backgroundTintList = ColorStateList.valueOf(
-                if (isSelected) selectedColor else defaultColor
-            )
-            button.setTextColor(if (isSelected) selectedTextColor else defaultTextColor)
+            val (tombstone, labelContainer) = views
+
+            if (isSelected) {
+                // Apply selected color (orange) to both tombstone and label
+                tombstone.backgroundTintList = ColorStateList.valueOf(selectedColor)
+                labelContainer.backgroundTintList = ColorStateList.valueOf(selectedColor)
+            } else {
+                // Apply default colors from XML mapping
+                val defaultColors = NAV_BUTTON_COLORS[name]
+                if (defaultColors != null) {
+                    val tombstoneColor = android.graphics.Color.parseColor(defaultColors.first)
+                    val labelColor = android.graphics.Color.parseColor(defaultColors.second)
+                    tombstone.backgroundTintList = ColorStateList.valueOf(tombstoneColor)
+                    labelContainer.backgroundTintList = ColorStateList.valueOf(labelColor)
+                }
+            }
         }
     }
 
@@ -1363,19 +1348,6 @@ class MainActivity : AppCompatActivity() {
         startService(intent)
     }
 
-    private fun updateTimeAndDate() {
-        val timeFormat = SimpleDateFormat("hh:mm a", Locale.US)
-        val dateFormat = SimpleDateFormat("MMM. dd, yyyy", Locale.US)
-        val now = Date()
-        
-//        tvCurrentTime.text = timeFormat.format(now).uppercase()
-//        tvCurrentDate.text = dateFormat.format(now).uppercase()
-    }
-
-    private fun startClock() {
-        timeHandler.post(timeRunnable)
-    }
-
     private fun terminateApp() {
         sendActionToService(MusicPlaybackService.ACTION_STOP)
         finishAndRemoveTask()
@@ -1404,7 +1376,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        timeHandler.removeCallbacks(timeRunnable)
         unregisterScreenStateReceiver()
         visualizerView.release()
         audioHandler.post {

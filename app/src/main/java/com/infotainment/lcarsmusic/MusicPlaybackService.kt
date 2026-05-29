@@ -18,6 +18,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.app.NotificationCompat as MediaNotificationCompat
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class MusicPlaybackService : MediaBrowserServiceCompat() {
+
+    private fun promoteToForegroundService() {
+        val startIntent = Intent(this, MusicPlaybackService::class.java)
+        ContextCompat.startForegroundService(this, startIntent)
+    }
 
     private var mediaPlayer: MediaPlayer? = null
     private lateinit var audioManager: AudioManager
@@ -74,6 +80,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
             if (song != null) {
                 if (song.uri == currentPlayingUri && mediaPlayer != null) {
                     // Resume existing track
+                    promoteToForegroundService()
                     play()
                     updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
                     updateNotification()
@@ -109,6 +116,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         }
 
         private fun startPreparedSong() {
+            promoteToForegroundService()
             play() // Force play when explicitly requested by transport controls.
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
             updateNotification()
@@ -262,6 +270,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         pause()
         updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
         updateNotification()
+        stopForeground(false)
     }
 
     private fun handleStopAction() {
@@ -470,6 +479,15 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         mediaPlayer?.release()
         mediaPlayer = null
         abandonAudioFocus()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d(VISUALIZER_LOG_TAG, "APP_SWIPED_FROM_RECENTS: Terminating playback and service.")
+
+        // This triggers your existing stop routine, drops the foreground notification,
+        // and completely kills the background service.
+        handleStopAction()
     }
 
     companion object {

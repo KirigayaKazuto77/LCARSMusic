@@ -1,8 +1,9 @@
 package com.infotainment.lcarsmusic
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
@@ -24,26 +25,41 @@ class LcarsFrame @JvmOverloads constructor(
     private val contentContainer: FrameLayout
     private var isInitialized = false
 
-    // Palettes expanded with lighter/darker shades for variety
-    private val leftPalette = listOf(
-        Color.parseColor("#FF0000"), // Red
-        Color.parseColor("#FF6666"), // Light Red
-        Color.parseColor("#8B0000"), // Dark Red
-        Color.parseColor("#0000FF"), // Blue
-        Color.parseColor("#ADD8E6"), // Light Blue
-        Color.parseColor("#00008B"), // Dark Blue
-        Color.parseColor("#FFFFFF")  // White
-    )
-
-    private val rightPalette = listOf(
-        Color.parseColor("#0000FF"), // Blue
-        Color.parseColor("#ADD8E6"), // Light Blue
-        Color.parseColor("#00008B"), // Dark Blue
-        Color.parseColor("#8A2BE2"), // Violet
-        Color.parseColor("#D8BFD8"), // Thistle (Light Violet)
-        Color.parseColor("#4B0082"), // Indigo
-        Color.parseColor("#FFA500"), // Orange
-        Color.parseColor("#FFD580")  // Light Orange
+    private val lcarsPalette = listOf(
+        Color.parseColor("#FF6753"),
+        Color.parseColor("#FF977B"),
+        Color.parseColor("#DD7700"),
+        Color.parseColor("#CC5500"),
+        Color.parseColor("#FF9911"),
+        Color.parseColor("#FFEECC"),
+        Color.parseColor("#CCCC66"),
+        Color.parseColor("#FFCC33"),
+        Color.parseColor("#FFAA00"),
+        Color.parseColor("#CC99FF"),
+        Color.parseColor("#5566FF"),
+        Color.parseColor("#8899FF"),
+        Color.parseColor("#99CCFF"),
+        Color.parseColor("#9966FF"),
+        Color.parseColor("#AAAAFF"),
+        Color.parseColor("#DDBBFF"),
+        Color.parseColor("#F5F6FA"),
+        Color.parseColor("#6699FF"),
+        Color.parseColor("#2266FF"),
+        Color.parseColor("#52526A"),
+        Color.parseColor("#88BBFF"),
+        Color.parseColor("#9966CC"),
+        Color.parseColor("#FFCC99"),
+        Color.parseColor("#99AA22"),
+        Color.parseColor("#99CC33"),
+        Color.parseColor("#2233FF"),
+        Color.parseColor("#EBF0FF"),
+        Color.parseColor("#FF7744"),
+        Color.parseColor("#CC6666"),
+        Color.parseColor("#FF8833"),
+        Color.parseColor("#999933"),
+        Color.parseColor("#CC55FF"),
+        Color.parseColor("#FFAA44"),
+        Color.parseColor("#88FFFF")
     )
 
     init {
@@ -59,29 +75,63 @@ class LcarsFrame @JvmOverloads constructor(
         val leftCol = findViewById<LinearLayout>(R.id.left_column)
         val rightCol = findViewById<LinearLayout>(R.id.right_column)
 
-        if (leftCol != null) animateChildren(leftCol, leftPalette)
-        if (rightCol != null) animateChildren(rightCol, rightPalette)
+        // Passing each layout independently ensures color uniqueness is isolated per column
+        if (leftCol != null) animateChildren(leftCol)
+        if (rightCol != null) animateChildren(rightCol)
     }
 
-    private fun animateChildren(parent: ViewGroup, palette: List<Int>) {
+    private fun animateChildren(parent: ViewGroup) {
+        // Keeps track of assigned/targeted colors within THIS column to prevent collisions
+        val activeColors = mutableSetOf<Int>()
+
         for (i in 0 until parent.childCount) {
             val child = parent.getChildAt(i)
 
-            // Randomly pick start and end colors from the expanded palette
-            val startColor = palette[Random.nextInt(palette.size)]
-            val endColor = palette[Random.nextInt(palette.size)]
+            // Step 1: Assign a unique baseline color to start with
+            var currentStartColor = pickUniqueColor(activeColors)
+            activeColors.add(currentStartColor)
+            child.setBackgroundColor(currentStartColor)
 
-            child.setBackgroundColor(startColor)
+            // Step 2: Define a looping transition routine
+            fun triggerNextFade(isFirstRun: Boolean) {
+                // Pick a unique destination color and reserve it
+                val currentEndColor = pickUniqueColor(activeColors)
+                activeColors.add(currentEndColor)
 
-            val animator = ObjectAnimator.ofInt(child, "backgroundColor", startColor, endColor)
-            animator.setEvaluator(ArgbEvaluator())
-            animator.duration = 2500 // Updated to 2500ms
-            animator.repeatCount = ValueAnimator.INFINITE
-            animator.repeatMode = ValueAnimator.REVERSE
+                val animator = ObjectAnimator.ofInt(child, "backgroundColor", currentStartColor, currentEndColor)
+                animator.setEvaluator(ArgbEvaluator())
+                animator.duration = 1500
 
-            // Staggered effect
-            animator.startDelay = (i * 400).toLong()
-            animator.start()
+                // Apply the layout's staggered start delay only on boot-up
+                if (isFirstRun) {
+                    animator.startDelay = (i * 400).toLong()
+                }
+
+                animator.addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        // Animation complete: Free up the old color asset, swap references, and cycle
+                        activeColors.remove(currentStartColor)
+                        currentStartColor = currentEndColor
+                        triggerNextFade(false)
+                    }
+                })
+                animator.start()
+            }
+
+            // Fire engine cycle
+            triggerNextFade(true)
+        }
+    }
+
+    private fun pickUniqueColor(activeColors: Set<Int>): Int {
+        // Filter out colors that are actively occupying structural units in the column
+        val availableColors = lcarsPalette.filter { it !in activeColors }
+
+        return if (availableColors.isNotEmpty()) {
+            availableColors[Random.nextInt(availableColors.size)]
+        } else {
+            // Safety fallback in case column elements exceed the palette size
+            lcarsPalette[Random.nextInt(lcarsPalette.size)]
         }
     }
 

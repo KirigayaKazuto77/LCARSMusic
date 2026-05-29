@@ -9,12 +9,12 @@
         layout="@layout/layout_visualizer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.50" />
+        android:layout_weight="0.40" />
 
     <include
         layout="@layout/layout_navigation_menu"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.50" />
+        android:layout_weight="0.60" />
 
 </LinearLayout>

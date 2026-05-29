@@ -9,12 +9,12 @@
         layout="@layout/layout_left_panel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="0.25" />
+        android:layout_weight="0.27" />
 
     <include
         layout="@layout/layout_right_panel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="0.75" />
+        android:layout_weight="0.73" />
 
 </LinearLayout>
