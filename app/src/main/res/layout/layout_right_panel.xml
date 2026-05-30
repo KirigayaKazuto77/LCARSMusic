@@ -3,24 +3,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:weightSum="1">
+    android:background="#000000">
 
     <include
         layout="@layout/layout_title_bar"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.175" />
+        android:layout_height="wrap_content" />
 
     <include
         layout="@layout/layout_main_view_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.525" />
+        android:layout_weight="1" />
 
     <include
         layout="@layout/layout_media_controls"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.30" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

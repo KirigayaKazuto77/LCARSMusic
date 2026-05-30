@@ -209,39 +209,41 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val playPauseBtn = findViewById<ImageButton>(R.id.btn_play_pause)
+            // UI Update for text-based PLAY/PAUSE button
+            val playPauseBtn = findViewById<Button>(R.id.btn_play_pause)
             if (state?.state == PlaybackStateCompat.STATE_PLAYING) {
-                playPauseBtn.setImageResource(android.R.drawable.ic_media_pause)
+                playPauseBtn.text = "PAUSE"
                 startProgressUpdates()
             } else {
-                playPauseBtn.setImageResource(android.R.drawable.ic_media_play)
+                playPauseBtn.text = "PLAY"
                 stopProgressUpdates()
             }
         }
 
         override fun onShuffleModeChanged(shuffleMode: Int) {
-            val btnShuffle = findViewById<ImageButton>(R.id.btn_shuffle)
+            val btnShuffle = findViewById<Button>(R.id.btn_shuffle)
+            val defaultColor = Color.parseColor("#FFCC33") // The default yellow assigned in XML
+
             if (shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL) {
-                btnShuffle.setColorFilter(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
+                btnShuffle.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
             } else {
-                btnShuffle.clearColorFilter()
+                btnShuffle.backgroundTintList = ColorStateList.valueOf(defaultColor)
             }
         }
 
         override fun onRepeatModeChanged(repeatMode: Int) {
-            val btnLoop = findViewById<ImageButton>(R.id.btn_loop)
+            val btnLoop = findViewById<Button>(R.id.btn_loop)
+            val defaultColor = Color.parseColor("#FFCC33") // The default yellow assigned in XML
+
             when (repeatMode) {
                 PlaybackStateCompat.REPEAT_MODE_ONE -> {
-                    btnLoop.setImageResource(android.R.drawable.ic_menu_rotate) // Can use a specific icon if available
-                    btnLoop.setColorFilter(ContextCompat.getColor(this@MainActivity, android.R.color.holo_orange_light))
+                    btnLoop.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_orange_light))
                 }
                 PlaybackStateCompat.REPEAT_MODE_ALL -> {
-                    btnLoop.setImageResource(android.R.drawable.ic_menu_rotate)
-                    btnLoop.setColorFilter(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
+                    btnLoop.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
                 }
                 else -> {
-                    btnLoop.setImageResource(android.R.drawable.ic_menu_rotate)
-                    btnLoop.clearColorFilter()
+                    btnLoop.backgroundTintList = ColorStateList.valueOf(defaultColor)
                 }
             }
         }
@@ -298,6 +300,7 @@ class MainActivity : AppCompatActivity() {
                 seekBar.progress = 0
                 findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(0L)
                 findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(trackDuration)
+                findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(trackDuration)}"
 
                 // Update Library Highlight and Scroll
                 mediaId?.toLongOrNull()?.let { id ->
@@ -326,7 +329,12 @@ class MainActivity : AppCompatActivity() {
                 val currentPosition = state.position
                 val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
                 seekBar.progress = currentPosition.toInt()
+
+                val trackDuration = seekBar.max.toLong()
+                val remaining = trackDuration - currentPosition
+
                 findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(currentPosition)
+                findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(remaining)}"
             }
         }
     }
@@ -791,7 +799,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupMediaControls() {
-        findViewById<ImageButton>(R.id.btn_play_pause).setOnClickListener {
+        findViewById<Button>(R.id.btn_play_pause).setOnClickListener {
             val playbackState = mediaController?.playbackState?.state
             if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
                 mediaController?.transportControls?.pause()
@@ -799,10 +807,11 @@ class MainActivity : AppCompatActivity() {
                 playSelectedOrFirstAvailableSong()
             }
         }
-        findViewById<ImageButton>(R.id.btn_previous).setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
-        findViewById<ImageButton>(R.id.btn_next).setOnClickListener { mediaController?.transportControls?.skipToNext() }
 
-        findViewById<ImageButton>(R.id.btn_shuffle).setOnClickListener {
+        findViewById<Button>(R.id.btn_previous).setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
+        findViewById<Button>(R.id.btn_next).setOnClickListener { mediaController?.transportControls?.skipToNext() }
+
+        findViewById<Button>(R.id.btn_shuffle).setOnClickListener {
             val currentMode = mediaController?.shuffleMode ?: PlaybackStateCompat.SHUFFLE_MODE_NONE
             val nextMode = if (currentMode == PlaybackStateCompat.SHUFFLE_MODE_NONE) {
                 PlaybackStateCompat.SHUFFLE_MODE_ALL
@@ -812,7 +821,7 @@ class MainActivity : AppCompatActivity() {
             mediaController?.transportControls?.setShuffleMode(nextMode)
         }
 
-        findViewById<ImageButton>(R.id.btn_loop).setOnClickListener {
+        findViewById<Button>(R.id.btn_loop).setOnClickListener {
             val currentMode = mediaController?.repeatMode ?: PlaybackStateCompat.REPEAT_MODE_NONE
             val nextMode = when (currentMode) {
                 PlaybackStateCompat.REPEAT_MODE_NONE -> PlaybackStateCompat.REPEAT_MODE_ALL
@@ -826,7 +835,11 @@ class MainActivity : AppCompatActivity() {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
+                    val trackDuration = seekBar?.max?.toLong() ?: 0L
+                    val remaining = trackDuration - progress.toLong()
+
                     findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(progress.toLong())
+                    findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(remaining)}"
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -872,28 +885,23 @@ class MainActivity : AppCompatActivity() {
                 mediaController?.transportControls?.play()
             }
             else -> {
-                findViewById<ImageButton>(R.id.btn_play_pause)
-                    .setImageResource(android.R.drawable.ic_media_play)
+                findViewById<Button>(R.id.btn_play_pause).text = "PLAY"
                 Toast.makeText(this, "NO SONGS AVAILABLE", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun setupVolumeControl() {
-        val volumeSeekBar = findViewById<SeekBar>(R.id.volume_seekbar)
-        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        volumeSeekBar.max = maxVolume
-        volumeSeekBar.progress = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val btnVolUp = findViewById<Button>(R.id.btn_vol_up)
+        val btnVolDown = findViewById<Button>(R.id.btn_vol_down)
 
-        volumeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0)
-                }
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+        btnVolUp.setOnClickListener {
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+        }
+
+        btnVolDown.setOnClickListener {
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+        }
     }
 
     private fun setupEqualizerUI() {

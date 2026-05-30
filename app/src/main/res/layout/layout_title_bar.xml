@@ -81,11 +81,31 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="5dp"
-        android:layout_marginEnd="10dp"
         android:backgroundTint="#66CCFF"
         android:background="@drawable/bttn_tombstone_right"
         app:layout_constraintStart_toEndOf="@+id/tv_view_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="@+id/l_shape" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_power"
+        android:layout_width="125dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_lcars_pill_button"
+        android:backgroundTint="#CC2233"
+        android:stateListAnimator="@null"
+        android:text="POWER"
+        android:textColor="#000000"
+        android:textSize="20sp"
+        android:textScaleX="0.6"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-condensed"
+        android:gravity="bottom|end"
+        android:paddingEnd="16dp"
+        android:paddingBottom="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tombstone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,125 +1,263 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:background="#1A1A1A">
+    android:layout_height="wrap_content"
+    android:background="#000000">
 
-    <!-- Seek Bar Section -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_horizontal_center"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="88dp" />
+
+    <LinearLayout
+        android:id="@+id/l_shapes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="195dp"
+            android:layout_height="85dp"
+            android:src="@drawable/ic_lcars_l_shape_lower_left"
+            android:layout_marginBottom="5dp" />
+        <ImageView
+            android:layout_width="195dp"
+            android:layout_height="85dp"
+            android:src="@drawable/ic_lcars_l_shape_upper_left" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/left_spacers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp"
+        app:layout_constraintStart_toEndOf="@+id/l_shapes"
+        app:layout_constraintTop_toTopOf="@+id/gl_horizontal_center"
+        app:layout_constraintBottom_toBottomOf="@+id/gl_horizontal_center">
+
+        <View android:layout_width="20dp" android:layout_height="15dp" android:background="#CC5500" android:layout_marginBottom="5dp" />
+        <View android:layout_width="20dp" android:layout_height="15dp" android:background="#CC5500" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/seekbar_container"
+        android:layout_width="450dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp"
+        app:layout_constraintStart_toEndOf="@+id/left_spacers"
+        app:layout_constraintTop_toTopOf="@+id/gl_horizontal_center"
+        app:layout_constraintBottom_toBottomOf="@+id/gl_horizontal_center">
+
+        <com.infotainment.lcarsmusic.LCARSMediaSeekBar
+            android:id="@+id/playback_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:lcarsFillColor="@color/lcars_nemesis_evening"
+            app:lcarsTrackColor="@color/lcars_nemesis_ghost"
+            android:progressDrawable="@null" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="7.5dp"
+            android:background="#E5C79E" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/timer_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="@+id/seekbar_container"
+        app:layout_constraintEnd_toEndOf="@+id/seekbar_container"
+        app:layout_constraintTop_toBottomOf="@+id/seekbar_container">
 
         <TextView
             android:id="@+id/tv_playback_time"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="00:00"
-            android:textColor="#FFFFFF" />
-
-        <SeekBar
-            android:id="@+id/playback_seekbar"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:minHeight="48dp" />
+            android:text="0:00"
+            android:gravity="start"
+            android:textColor="#FF9933"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed"
+            android:textScaleX="0.6" />
 
         <TextView
             android:id="@+id/tv_track_duration"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="00:00"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
-
-    <!-- Controls Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <ImageButton
-            android:id="@+id/btn_shuffle"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="SHUFFLE"
-            android:src="@android:drawable/ic_menu_directions"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <ImageButton
-            android:id="@+id/btn_previous"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="PREVIOUS"
-            android:src="@android:drawable/ic_media_previous"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <ImageButton
-            android:id="@+id/btn_play_pause"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:contentDescription="PLAY PAUSE"
-            android:src="@android:drawable/ic_media_play"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <ImageButton
-            android:id="@+id/btn_next"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="NEXT"
-            android:src="@android:drawable/ic_media_next"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-        <ImageButton
-            android:id="@+id/btn_loop"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:contentDescription="LOOP"
-            android:src="@android:drawable/ic_menu_rotate"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-
-    </LinearLayout>
-
-    <!-- Volume and Power Row -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="VOL"
-            android:textAllCaps="true"
-            android:textColor="#FFFFFF"
-            android:layout_marginEnd="8dp"/>
-
-        <SeekBar
-            android:id="@+id/volume_seekbar"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:minHeight="48dp" />
+            android:text="4:30"
+            android:gravity="center"
+            android:textColor="#FF9933"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed"
+            android:textScaleX="0.6" />
 
-        <Button
-            android:id="@+id/btn_power"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tv_remaining_time"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:text="POWER"
-            android:textAllCaps="true"
-            android:backgroundTint="#AA0000"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="16dp" />
-
+            android:layout_weight="1"
+            android:text="- 4:30"
+            android:gravity="end"
+            android:textColor="#FF9933"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed"
+            android:textScaleX="0.6" />
     </LinearLayout>
 
-</LinearLayout>
+    <LinearLayout
+        android:id="@+id/right_inner_spacers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp"
+        app:layout_constraintStart_toEndOf="@+id/seekbar_container"
+        app:layout_constraintTop_toTopOf="@+id/gl_horizontal_center"
+        app:layout_constraintBottom_toBottomOf="@+id/gl_horizontal_center">
+
+        <View android:layout_width="20dp" android:layout_height="15dp" android:background="#CC5500" android:layout_marginBottom="5dp" />
+        <View android:layout_width="20dp" android:layout_height="15dp" android:background="#CC5500" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/right_outer_spacers"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp"
+        app:layout_constraintStart_toEndOf="@+id/right_inner_spacers"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/gl_horizontal_center"
+        app:layout_constraintBottom_toBottomOf="@+id/gl_horizontal_center">
+
+        <View android:layout_width="match_parent" android:layout_height="15dp" android:background="#8899FF" android:layout_marginBottom="5dp" />
+        <View android:layout_width="match_parent" android:layout_height="15dp" android:background="#8899FF" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/left_decorative_block"
+        android:layout_width="125dp"
+        android:layout_height="50dp"
+        android:background="#37A6D1"
+        android:layout_marginTop="5dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/l_shapes" />
+
+    <LinearLayout
+        android:id="@+id/playback_button_row"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="55dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/left_decorative_block"
+        app:layout_constraintTop_toBottomOf="@+id/right_outer_spacers">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_shuffle"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="15dp"
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_nemesis_evening"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="SHUFFLE"
+            android:textColor="#000000"
+            android:textScaleX="0.6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_previous"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="15dp"
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_nemesis_cool"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="PREV"
+            android:textColor="#000000"
+            android:textScaleX="0.6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_play_pause"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="15dp"
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_lower_decks_padd_beta_blue"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="PLAY"
+            android:textColor="#000000"
+            android:textScaleX="0.6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_next"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="15dp"
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_nemesis_cool"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="NEXT"
+            android:textColor="#000000"
+            android:textScaleX="0.6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_loop"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_nemesis_evening"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="LOOP"
+            android:textColor="#000000"
+            android:textScaleX="0.6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#000000"
-    android:padding="8dp">
+    android:layout_marginTop="10dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -296,6 +296,57 @@
                     android:layout_height="50dp"
                     android:layout_marginStart="10dp"
                     android:background="#5E5EF5" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="@drawable/bttn_tombstone_left"
+                    android:backgroundTint="@color/lcars_classic_mars" />
+
+                <FrameLayout
+                    android:layout_width="115dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@color/lcars_nemesis_cardinal"
+                    android:paddingEnd="4dp"
+                    android:paddingBottom="5dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="18sp"
+                        android:layout_gravity="bottom|end"
+                        android:scaleY="2.0"
+                        android:text="BLUETOOTH"
+                        android:textColor="#000000"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="70dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="10dp"
+                    android:gravity="fill_vertical|end"
+                    android:scaleY="2.0"
+                    android:text="0"
+                    android:textColor="#FFFFFF"
+                    android:textSize="35sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@color/lcars_lower_decks_padd_sunset_red" />
             </LinearLayout>
 
         </LinearLayout>

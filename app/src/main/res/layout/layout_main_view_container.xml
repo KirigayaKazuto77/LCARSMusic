@@ -1,10 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_view_container"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Sub-views like layout_now_playing, layout_library, etc. will be swapped here -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gl_left_col"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="125dp" />
 
-</FrameLayout>
+    <ImageView
+        android:id="@+id/l_shape_upper"
+        android:layout_width="195dp"
+        android:layout_height="85dp"
+        android:layout_marginTop="10dp"
+        android:src="@drawable/ic_lcars_l_shape_upper_left"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/top_borders"
+        android:layout_width="0dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="5dp"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toEndOf="@+id/l_shape_upper"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/l_shape_upper">
+
+        <View android:layout_width="50dp" android:layout_height="match_parent" android:background="#88BBFF" android:layout_marginEnd="5dp" />
+        <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#FF9933" android:layout_marginEnd="5dp" />
+        <View android:layout_width="0dp" android:layout_weight="0.75" android:layout_height="match_parent" android:background="#FF7700" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/left_column_controls"
+        android:layout_width="125dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="5dp"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/l_shape_upper"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginBottom="5dp"
+            android:background="#5588EE" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_vol_up"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:layout_marginBottom="5dp"
+            android:background="@color/lcars_classic_golden_orange"
+            android:stateListAnimator="@null"
+            android:text="VOL +"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:textScaleX="0.6"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_vol_down"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:layout_marginBottom="5dp"
+            android:background="@color/lcars_classic_mars"
+            android:stateListAnimator="@null"
+            android:text="VOL -"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:textScaleX="0.6"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="12dp"
+            android:paddingBottom="6dp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/main_view_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        app:layout_constraintStart_toEndOf="@+id/gl_left_col"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/top_borders"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
