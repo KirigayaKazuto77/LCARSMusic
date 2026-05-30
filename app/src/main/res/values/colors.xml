@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- DEFAULT ANDROID THEME COLORS -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -9,4 +10,89 @@
     <color name="white">#FFFFFFFF</color>
     <color name="lcars_visualizer_mode_selected">#FFFF00</color>
     <color name="lcars_visualizer_mode_unselected">#0000FF</color>
+
+    <!-- LCARS CLASSIC THEME COLORS -->
+    <color name="lcars_classic_african_violet">#cc99ff</color>
+    <color name="lcars_classic_almond">#ffaa90</color>
+    <color name="lcars_classic_almond_creme">#ffbbaa</color>
+    <color name="lcars_classic_blue">#5566ff</color>
+    <color name="lcars_classic_bluey">#8899ff</color>
+    <color name="lcars_classic_butterscotch">#ff9966</color>
+    <color name="lcars_classic_gold">#ffaa00</color>
+    <color name="lcars_classic_golden_orange">#ff9900</color>
+    <color name="lcars_classic_gray">#666688</color>
+    <color name="lcars_classic_green">#999933</color>
+    <color name="lcars_classic_ice">#99ccff</color>
+    <color name="lcars_classic_lilac">#cc55ff</color>
+    <color name="lcars_classic_lima_bean">#cccc66</color>
+    <color name="lcars_classic_magenta">#cc5599</color>
+    <color name="lcars_classic_mars">#ff2200</color>
+    <color name="lcars_classic_moonlit_violet">#9966ff</color>
+    <color name="lcars_classic_orange">#ff8800</color>
+    <color name="lcars_classic_peach">#ff8866</color>
+    <color name="lcars_classic_red">#cf4f4f</color>
+    <color name="lcars_classic_sky">#aaaaff</color>
+    <color name="lcars_classic_space_white">#f5f6fa</color>
+    <color name="lcars_classic_sunflower">#ffcc99</color>
+    <color name="lcars_classic_sunglow">#ffcc33</color>
+    <color name="lcars_classic_tomato">#ff5555</color>
+    <color name="lcars_classic_violet_creme">#ddbbff</color>
+
+    <!-- LCARS NEMESIS BLUE THEME COLORS -->
+    <color name="lcars_nemesis_cardinal">#cc2233</color>
+    <color name="lcars_nemesis_cool">#6699ff</color>
+    <color name="lcars_nemesis_evening">#2266ff</color>
+    <color name="lcars_nemesis_galaxy_gray">#52526a</color>
+    <color name="lcars_nemesis_ghost">#88bbff</color>
+    <color name="lcars_nemesis_grape">#9966cc</color>
+    <color name="lcars_nemesis_honey">#ffcc99</color>
+    <color name="lcars_nemesis_lawn">#99aa22</color>
+    <color name="lcars_nemesis_martian">#99cc33</color>
+    <color name="lcars_nemesis_midnight">#2233ff</color>
+    <color name="lcars_nemesis_moonbeam">#ebf0ff</color>
+    <color name="lcars_nemesis_pumpkinshade">#ff7744</color>
+    <color name="lcars_nemesis_roseblush">#cc6666</color>
+    <color name="lcars_nemesis_tangerine">#ff8833</color>
+    <color name="lcars_nemesis_wheat">#ccaa88</color>
+
+    <!-- LCARS LOWER DECKS THEME COLORS -->
+    <color name="lcars_lower_decks_butter">#ffeecc</color>
+    <color name="lcars_lower_decks_daybreak">#ff9911</color>
+    <color name="lcars_lower_decks_harvestgold">#ffaa44</color>
+    <color name="lcars_lower_decks_honey">#ffcc99</color>
+    <color name="lcars_lower_decks_october_sunset">#ff4400</color>
+    <color name="lcars_lower_decks_orange">#ff7700</color>
+    <color name="lcars_lower_decks_rich_pumpkin">#cc5500</color>
+
+    <!-- LCARS LOWER DECKS PADD THEME COLORS -->
+    <color name="lcars_lower_decks_padd_alpha_blue">#5588ee</color>
+    <color name="lcars_lower_decks_padd_arctic_ice">#66ccff</color>
+    <color name="lcars_lower_decks_padd_arctic_snow">#99ccff</color>
+    <color name="lcars_lower_decks_padd_radioactive">#88ffff</color>
+    <color name="lcars_lower_decks_padd_beta_blue">#7799dd</color>
+    <color name="lcars_lower_decks_padd_night_cloud">#344470</color>
+    <color name="lcars_lower_decks_padd_night_rain">#455580</color>
+    <color name="lcars_lower_decks_padd_sunset_red">#ff3500</color>
+
+    <!-- LCARS PICARD THEME COLORS -->
+    <color name="lcars_picard_primary_gray">#6d748c</color>
+    <color name="lcars_picard_font_color">#828ba6</color>
+    <color name="lcars_picard_light_gray">#9ea5ba</color>
+    <color name="lcars_picard_ghost_gray">#d2d5df</color>
+    <color name="lcars_picard_starlight">#f3f4f7</color>
+    <color name="lcars_picard_medium_dark_gray">#52596e</color>
+    <color name="lcars_picard_dark_gray">#2f3749</color>
+    <color name="lcars_picard_orange_red">#e7442a</color>
+    <color name="lcars_picard_light_orange_red">#ff6753</color>
+    <color name="lcars_picard_pale_orange_red">#ff977b</color>
+    <color name="lcars_picard_blue">#37a6d1</color>
+    <color name="lcars_picard_medium_dark_blue">#2a7193</color>
+    <color name="lcars_picard_dark_blue">#1c3c55</color>
+    <color name="lcars_picard_cyan">#00eeee</color>
+    <color name="lcars_picard_green">#808c6d</color>
+    <color name="lcars_picard_black_cherry">#8C6D7c</color>
+
+    <!-- ACTIVE/SELECTED STATE COLORS -->
+    <color name="lcars_active_orange">#FF9900</color>
+    <color name="lcars_active_yellow">#FFCC00</color>
 </resources>

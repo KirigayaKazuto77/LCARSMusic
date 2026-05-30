@@ -75,14 +75,14 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:paddingStart="10dp"
-            android:layout_marginEnd="25dp"
+            android:layout_marginEnd="20dp"
             android:orientation="vertical">
 
             <LinearLayout
                 android:id="@+id/btn_now_playing"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="5dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="horizontal">
@@ -96,9 +96,9 @@
 
                 <FrameLayout
                     android:id="@+id/label_container_now_playing"
-                    android:layout_width="120dp"
+                    android:layout_width="115dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#5566ff"
                     android:paddingEnd="4dp"
                     android:paddingBottom="5dp">
@@ -129,7 +129,7 @@
                 <View
                     android:layout_width="20dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#5588EE" />
             </LinearLayout>
 
@@ -137,7 +137,7 @@
                 android:id="@+id/btn_library"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="5dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="horizontal">
@@ -147,13 +147,13 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:background="@drawable/bttn_tombstone_left"
-                    android:backgroundTint="#2266FF" />
+                    android:backgroundTint="@color/lcars_picard_blue" />
 
                 <FrameLayout
                     android:id="@+id/label_container_library"
-                    android:layout_width="120dp"
+                    android:layout_width="115dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#88BBFF"
                     android:paddingEnd="4dp"
                     android:paddingBottom="5dp">
@@ -184,7 +184,7 @@
                 <View
                     android:layout_width="20dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#66CCFF" />
             </LinearLayout>
 
@@ -192,7 +192,7 @@
                 android:id="@+id/btn_playlist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="5dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="horizontal">
@@ -202,14 +202,14 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:background="@drawable/bttn_tombstone_left"
-                    android:backgroundTint="#4E81E0" />
+                    android:backgroundTint="@color/lcars_lower_decks_padd_beta_blue" />
 
                 <FrameLayout
                     android:id="@+id/label_container_playlist"
-                    android:layout_width="120dp"
+                    android:layout_width="115dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
-                    android:background="#5566FF"
+                    android:layout_marginStart="10dp"
+                    android:background="@color/lcars_lower_decks_padd_alpha_blue"
                     android:paddingEnd="4dp"
                     android:paddingBottom="5dp">
 
@@ -239,7 +239,7 @@
                 <View
                     android:layout_width="20dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#99CCFF" />
             </LinearLayout>
 
@@ -247,7 +247,7 @@
                 android:id="@+id/btn_equalizer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="5dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="horizontal">
@@ -261,10 +261,10 @@
 
                 <FrameLayout
                     android:id="@+id/label_container_equalizer"
-                    android:layout_width="120dp"
+                    android:layout_width="115dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
-                    android:background="#8899FF"
+                    android:layout_marginStart="10dp"
+                    android:background="@color/lcars_classic_bluey"
                     android:paddingEnd="4dp"
                     android:paddingBottom="5dp">
 
@@ -294,7 +294,7 @@
                 <View
                     android:layout_width="20dp"
                     android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="10dp"
                     android:background="#5E5EF5" />
             </LinearLayout>
 
@@ -308,13 +308,13 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
-                android:background="#9966CC" />
+                android:background="@color/lcars_classic_blue" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:layout_marginTop="4dp"
-                android:background="#FFA500" />
+                android:background="@color/lcars_classic_bluey" />
         </LinearLayout>
 
     </LinearLayout>

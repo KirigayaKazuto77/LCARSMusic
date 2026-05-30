@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnVisualizerFrequencyDomain: FrameLayout
     private lateinit var btnVisualizerTimeDomain: FrameLayout
+    private val defaultBackgroundTints = mutableMapOf<View, ColorStateList?>()
     
     // Media Browser and Controller
     private lateinit var mediaBrowser: MediaBrowserCompat
@@ -369,6 +370,10 @@ class MainActivity : AppCompatActivity() {
 
         btnVisualizerFrequencyDomain = findViewById(R.id.btn_visualizer_frequency_domain)
         btnVisualizerTimeDomain = findViewById(R.id.btn_visualizer_time_domain)
+        captureDefaultBackgroundTints(
+            btnVisualizerFrequencyDomain,
+            btnVisualizerTimeDomain
+        )
 
         btnVisualizerFrequencyDomain.setOnClickListener {
             val nextMode = if (currentVisualizerMode == VisualizerMode.FREQUENCY_DOMAIN) {
@@ -410,24 +415,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Active colors for selected visualizer buttons
-        val activeContainerColor = Color.parseColor("#FFCC00") // Bright Yellow
-
+        val activeContainerColor = ContextCompat.getColor(this, R.color.lcars_active_yellow)
         val frequencySelected = mode == VisualizerMode.FREQUENCY_DOMAIN
         val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 
-        // Frequency Domain Button: show active color only when selected, otherwise null to show XML defaults
-        btnVisualizerFrequencyDomain.backgroundTintList = if (frequencySelected) {
-            ColorStateList.valueOf(activeContainerColor)
+        if (frequencySelected) {
+            btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(activeContainerColor)
         } else {
-            null
+            restoreDefaultBackgroundTint(btnVisualizerFrequencyDomain)
         }
 
-        // Time Domain Button: show active color only when selected, otherwise null to show XML defaults
-        btnVisualizerTimeDomain.backgroundTintList = if (timeSelected) {
-            ColorStateList.valueOf(activeContainerColor)
+        if (timeSelected) {
+            btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(activeContainerColor)
         } else {
-            null
+            restoreDefaultBackgroundTint(btnVisualizerTimeDomain)
         }
     }
 
@@ -594,6 +595,26 @@ class MainActivity : AppCompatActivity() {
         findViewById<LinearLayout>(R.id.btn_library).setOnClickListener { switchView("LIBRARY") }
         findViewById<LinearLayout>(R.id.btn_playlist).setOnClickListener { switchView("PLAYLIST") }
         findViewById<LinearLayout>(R.id.btn_equalizer).setOnClickListener { switchView("EQUALIZER") }
+        captureDefaultBackgroundTints(
+            findViewById(R.id.tombstone_now_playing),
+            findViewById(R.id.label_container_now_playing),
+            findViewById(R.id.tombstone_library),
+            findViewById(R.id.label_container_library),
+            findViewById(R.id.tombstone_playlist),
+            findViewById(R.id.label_container_playlist),
+            findViewById(R.id.tombstone_equalizer),
+            findViewById(R.id.label_container_equalizer)
+        )
+    }
+
+    private fun captureDefaultBackgroundTints(vararg views: View) {
+        views.forEach { view ->
+            defaultBackgroundTints[view] = view.backgroundTintList
+        }
+    }
+
+    private fun restoreDefaultBackgroundTint(view: View) {
+        view.backgroundTintList = defaultBackgroundTints[view]
     }
 
     private fun switchView(viewName: String) {
@@ -619,7 +640,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateNavigationSelection(viewName: String) {
-        val selectedColor = ContextCompat.getColor(this, android.R.color.holo_orange_light)
+        val selectedColor = ContextCompat.getColor(this, R.color.lcars_active_orange)
 
         val navButtons = mapOf(
             "NOW PLAYING" to Pair(findViewById<View>(R.id.tombstone_now_playing), findViewById<FrameLayout>(R.id.label_container_now_playing)),
@@ -633,13 +654,11 @@ class MainActivity : AppCompatActivity() {
             val (tombstone, labelContainer) = views
 
             if (isSelected) {
-                // Apply selected color (orange) to both tombstone and label
                 tombstone.backgroundTintList = ColorStateList.valueOf(selectedColor)
                 labelContainer.backgroundTintList = ColorStateList.valueOf(selectedColor)
             } else {
-                // Clear tints to show XML default colors
-                tombstone.backgroundTintList = null
-                labelContainer.backgroundTintList = null
+                restoreDefaultBackgroundTint(tombstone)
+                restoreDefaultBackgroundTint(labelContainer)
             }
         }
     }
