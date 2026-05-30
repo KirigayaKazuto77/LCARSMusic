@@ -23,7 +23,9 @@
         android:layout_weight="3"
         android:text="SONG TITLE"
         android:textAllCaps="true"
-        android:textColor="#FFFFFF" />
+        android:textColor="#FFFFFF"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/tv_item_artist"
