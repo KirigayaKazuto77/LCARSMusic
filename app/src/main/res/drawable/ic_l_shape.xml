@@ -18,6 +18,6 @@
       Z           : Close path
     -->
     <path
-        android:fillColor="#EF4444"
-        android:pathData="M 0,0 L 125,0 L 125,20 A 10,10 0 0,0 135,30 L 165,30 L 165,80 L 80,80 A 80,80 0 0,1 0,0 Z" />
+        android:fillColor="#6699FF"
+        android:pathData="M 0,0 L 125,0 A 30,30 0 0,0 155,30 L 165,30 L 165,80 L 80,80 A 80,80 0 0,1 0,0 Z" />
 </vector>

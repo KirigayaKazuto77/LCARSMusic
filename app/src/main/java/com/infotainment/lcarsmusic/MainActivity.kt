@@ -42,14 +42,6 @@ class MainActivity : AppCompatActivity() {
         const val PREF_EQUALIZER_BAND_PROGRESS = "PREF_EQUALIZER_BAND_PROGRESS"
         const val CUSTOM_PRESET_INDEX = -1
         const val FLAT_PRESET_INDEX = 0
-
-        // Navigation button default colors (from layout_navigation_menu.xml)
-        val NAV_BUTTON_COLORS = mapOf(
-            "NOW PLAYING" to Pair("#6699FF", "#5566ff"),
-            "LIBRARY" to Pair("#2266FF", "#88BBFF"),
-            "PLAYLIST" to Pair("#4E81E0", "#5566FF"),
-            "EQUALIZER" to Pair("#88BBFF", "#8899FF")
-        )
     }
 
     private lateinit var audioManager: AudioManager
@@ -418,26 +410,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // LCARS Colors
-        val inactiveTombstoneColor = Color.parseColor("#4E81E0")
-        val inactiveContainerColor = Color.parseColor("#37A7EC")
-
-        // Two distinct shades of yellow for the active state
-        val activeTombstoneColor = Color.parseColor("#FF9900") // Orange/Yellow
+        // Active colors for selected visualizer buttons
         val activeContainerColor = Color.parseColor("#FFCC00") // Bright Yellow
 
         val frequencySelected = mode == VisualizerMode.FREQUENCY_DOMAIN
         val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 
-        // Tint Frequency Domain Button Layout
-        btnVisualizerFrequencyDomain.backgroundTintList = ColorStateList.valueOf(
-            if (frequencySelected) activeContainerColor else inactiveContainerColor
-        )
+        // Frequency Domain Button: show active color only when selected, otherwise null to show XML defaults
+        btnVisualizerFrequencyDomain.backgroundTintList = if (frequencySelected) {
+            ColorStateList.valueOf(activeContainerColor)
+        } else {
+            null
+        }
 
-        // Tint Time Domain Button Layout
-        btnVisualizerTimeDomain.backgroundTintList = ColorStateList.valueOf(
-            if (timeSelected) activeContainerColor else inactiveContainerColor
-        )
+        // Time Domain Button: show active color only when selected, otherwise null to show XML defaults
+        btnVisualizerTimeDomain.backgroundTintList = if (timeSelected) {
+            ColorStateList.valueOf(activeContainerColor)
+        } else {
+            null
+        }
     }
 
     private fun loadSavedVisualizerMode(): VisualizerMode {
@@ -646,14 +637,9 @@ class MainActivity : AppCompatActivity() {
                 tombstone.backgroundTintList = ColorStateList.valueOf(selectedColor)
                 labelContainer.backgroundTintList = ColorStateList.valueOf(selectedColor)
             } else {
-                // Apply default colors from XML mapping
-                val defaultColors = NAV_BUTTON_COLORS[name]
-                if (defaultColors != null) {
-                    val tombstoneColor = android.graphics.Color.parseColor(defaultColors.first)
-                    val labelColor = android.graphics.Color.parseColor(defaultColors.second)
-                    tombstone.backgroundTintList = ColorStateList.valueOf(tombstoneColor)
-                    labelContainer.backgroundTintList = ColorStateList.valueOf(labelColor)
-                }
+                // Clear tints to show XML default colors
+                tombstone.backgroundTintList = null
+                labelContainer.backgroundTintList = null
             }
         }
     }

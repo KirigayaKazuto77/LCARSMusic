@@ -1,0 +1,411 @@
+HTML:
+
+<div class="main-view-container">
+  <div class="main-view-top-border-container">
+    <div class="l-shape-upper-right"></div>
+    <div class="main-view-top-border-group">
+      <div class="top-border left"></div>
+      <div class="top-border center"></div>
+      <div class="top-border right"></div>
+    </div>
+  </div>
+
+  <div class="main-view-misc-buttons-container">
+    <div class="main-view-misc-buttons spacer"></div>
+    <div class="main-view-misc-buttons vol-up">
+      <p class="misc-button-text">VOL +</p>
+    </div>
+    <div class="main-view-misc-buttons vol-down">
+      <p class="misc-button-text">VOL -</p>
+    </div>
+  </div>
+
+  <div class="media-control-seekbar-container">
+    <div class="media-control-seekbar-l-shapes">
+      <div class="l-shape-lower-left" style="--bg-color: #7799dd"></div>
+      <div class="l-shape-upper-right" style="--bg-color: #37a6d1"></div>
+    </div>
+
+    <div class="media-control-seekbar-spacers" style="margin-left: 100px">
+      <div class="bottom-border seekbar-ends"></div>
+      <div class="bottom-border seekbar-ends"></div>
+    </div>
+
+    <div class="media-control-seekbar-spacers" style="margin-top: 30px;">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="50"
+        class="lcars-media-seekbar"
+        id="myRange"
+        style="--progress: 50%"
+      />
+      <div class="lcars-media-seekbar-bottom-border"></div>
+
+      <div class="seekbar-time-container">
+        <span class="seekbar-time">0:00</span>
+        <span class="seekbar-time">4:30</span>
+        <span class="seekbar-time">- 4:30</span>
+      </div>
+    </div>
+
+    <div class="media-control-seekbar-spacers">
+      <div class="bottom-border right"></div>
+      <div class="bottom-border right"></div>
+    </div>
+
+    <div class="media-control-seekbar-spacers">
+      <div class="bottom-border seekbar-ends"></div>
+      <div class="bottom-border seekbar-ends"></div>
+    </div>
+  </div>
+
+  <div class="main-view-misc-buttons-container">
+    <div class="main-view-misc-buttons media-spacer"></div>
+  </div>
+</div>
+
+
+CSS:
+body {
+  font-family: 'Helvetica Ultra Compressed', Arial, sans-serif;
+  background-color: black;
+}
+
+.main-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.main-view-top-border-container {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.main-view-misc-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.main-view-top-border-group {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  margin-left: 100px;
+}
+
+.main-view-bottom-border-group {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  margin-left: 100px;
+}
+
+.top-border {
+  height: 15px;
+
+  &.left {
+    background-color: #88bbff;
+    width: 50px;
+  }
+
+  &.center {
+    background-color: #ff9933;
+    width: 300px;
+  }
+
+  &.right {
+    background-color: #ff7700;
+    width: 150px;
+  }
+}
+
+.bottom-border {
+  height: 15px;
+
+  &.seekbar-ends {
+    background-color: #cc5500;
+    width: 20px;
+  }
+
+  &.right {
+    background-color: #ff7700;
+    width: 100px;
+  }
+}
+
+.main-view-misc-buttons {
+  width: 125px;
+  height: 55px;
+  background-color: blue;
+  color: black;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+
+  /* INCREASED: Bump up this value to push the text higher */
+  padding-right: 4px;
+  padding-bottom: 5px; /* Changed from 2px to 10px */
+  box-sizing: border-box;
+
+  &.spacer {
+    background-color: #5588ee;
+  }
+
+  &.media-spacer {
+    background-color: #37a6d1;
+  }
+
+  &.vol-up {
+    background-color: #99aa22;
+  }
+
+  &.vol-down {
+    background-color: #ff9966;
+  }
+}
+
+.misc-button-text {
+  margin: 0;
+  font-size: 10px;
+  font-weight: bolder;
+  line-height: 10px;
+  transform: scaleY(2);
+
+  /* NEW: Forces the text to stretch upward and leftward, rather than out from the center */
+  transform-origin: bottom right;
+}
+
+.l-shape-upper-right {
+  /* --- CUSTOMIZABLE VARIABLES --- */
+  --bg-color: #5588ee;
+
+  /* Axis Thicknesses */
+  --v-thickness: 125px;
+  --h-thickness: 15px;
+
+  /* Radii */
+  --inner-radius: 50px;
+  --outer-radius: 100px;
+
+  /* Overall Size */
+  --v-height: 85px;
+  --h-width: 100px;
+
+  position: relative;
+
+  width: var(--v-thickness);
+  height: var(--v-height);
+  background-color: var(--bg-color);
+
+  /* Round the outer top-left corner */
+  border-top-left-radius: var(--outer-radius);
+}
+
+/* --- THE HORIZONTAL BAR --- */
+.l-shape-upper-right::after {
+  content: '';
+  position: absolute;
+  top: 0; /* Start at the top instead of the bottom */
+  left: var(--v-thickness);
+  width: var(--h-width);
+  height: var(--h-thickness);
+  background-color: var(--bg-color);
+}
+
+/* --- THE INNER (CONCAVE) CORNER --- */
+.l-shape-upper-right::before {
+  content: '';
+  position: absolute;
+  /* Align to the outer edges of the intersection */
+  top: var(--h-thickness); /* Move anchor from bottom to top */
+  left: var(--v-thickness);
+
+  width: var(--inner-radius);
+  height: var(--inner-radius);
+
+  /* Carves out the corner */
+  background: radial-gradient(
+    circle at bottom right,
+    /* Flipped from top right to carve the correct opposing corner */
+    transparent calc(var(--inner-radius) - 0.5px),
+    var(--bg-color) var(--inner-radius)
+  );
+}
+
+.l-shape-lower-left {
+  /* --- CUSTOMIZABLE VARIABLES --- */
+  --bg-color: #5588ee;
+
+  /* Axis Thicknesses */
+  --v-thickness: 125px;
+  --h-thickness: 15px;
+
+  /* Radii */
+  --inner-radius: 50px;
+  --outer-radius: 100px;
+
+  /* Overall Size */
+  --v-height: 85px;
+  --h-width: 100px;
+
+  position: relative;
+
+  width: var(--v-thickness);
+  height: var(--v-height);
+  background-color: var(--bg-color);
+
+  /* Round the outer bottom-left corner */
+  border-bottom-left-radius: var(--outer-radius);
+}
+
+/* --- THE HORIZONTAL BAR --- */
+.l-shape-lower-left::after {
+  content: '';
+  position: absolute;
+  bottom: 0; /* Start at the bottom instead of the top */
+  left: var(--v-thickness);
+  width: var(--h-width);
+  height: var(--h-thickness);
+  background-color: var(--bg-color);
+}
+
+/* --- THE INNER (CONCAVE) CORNER --- */
+.l-shape-lower-left::before {
+  content: '';
+  position: absolute;
+  /* Align to the outer edges of the intersection */
+  bottom: var(--h-thickness); /* Move anchor from top to bottom */
+  left: var(--v-thickness);
+
+  width: var(--inner-radius);
+  height: var(--inner-radius);
+
+  /* Carves out the corner */
+  background: radial-gradient(
+    circle at top right,
+    /* Flipped from bottom right to carve the correct opposing corner */
+    transparent calc(var(--inner-radius) - 0.5px),
+    var(--bg-color) var(--inner-radius)
+  );
+}
+
+.media-control-seekbar-container {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+}
+
+.media-control-seekbar-l-shapes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.media-control-seekbar-spacers {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lcars-media-seekbar-bottom-border {
+  height: 7.5px;
+  width: 350px;
+  background-color: wheat;
+}
+
+/* Base Input Container */
+.lcars-media-seekbar {
+  -webkit-appearance: none; /* Required to override WebKit defaults */
+  appearance: none;
+  width: 350px;
+  height: 22.5px;
+  outline: none;
+  margin: 0;
+
+  /* The gradient acts as both the track (grey) and the fill (black) */
+  background: linear-gradient(to right, #2266ff var(--progress), #88bbff var(--progress));
+}
+
+/* ------------------------------------ */
+/* WEBKIT BROWSERS (Chrome, Safari, Edge) */
+/* ------------------------------------ */
+
+.lcars-media-seekbar::-webkit-slider-runnable-track {
+  height: 22.5px;
+  background: transparent; /* Let the base background show through */
+  border: none;
+}
+
+.lcars-media-seekbar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box; /* Ensures border doesn't add to the 22.5px total size */
+  width: 22.5px;
+  height: 22.5px;
+  background: white;
+  border: 2px solid black;
+  border-radius: 0; /* Forces a strict square */
+  cursor: pointer;
+}
+
+/* ------------------------------------ */
+/* FIREFOX                              */
+/* ------------------------------------ */
+
+.lcars-media-seekbar::-moz-range-track {
+  height: 22.5px;
+  background: transparent; /* Let the base background show through */
+  border: none;
+}
+
+.lcars-media-seekbar::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 22.5px;
+  height: 22.5px;
+  background: white;
+  border: 1px solid black;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.seekbar-time-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 350px; /* Aligns with the seekbar and border width */
+  height: 25px;
+  padding-top: 5px; /* Adds a small gap between the border and the text */
+  box-sizing: border-box;
+}
+
+.seekbar-time {
+  font-family: 'Helvetica Ultra Compressed', Arial, sans-serif;
+  color: #ff9933; /* Using a standard LCARS accent color */
+  font-size: 14px;
+  font-weight: bolder;
+  transform: scaleY(1.5); /* Maintains the LCARS text aesthetic */
+  transform-origin: bottom;
+}
+
+
+JavaScript:
+const slider = document.getElementById('myRange');
+
+slider.addEventListener('input', function() {
+  // Calculate the percentage based on min and max values
+  const min = this.min ? parseFloat(this.min) : 0;
+  const max = this.max ? parseFloat(this.max) : 100;
+  const val = parseFloat(this.value);
+
+  const percentage = ((val - min) / (max - min)) * 100;
+
+  // Update the CSS variable dynamically
+  this.style.setProperty('--progress', `${percentage}%`);
+});
