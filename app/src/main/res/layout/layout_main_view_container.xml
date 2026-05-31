@@ -31,9 +31,24 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/l_shape_upper">
 
-        <View android:layout_width="50dp" android:layout_height="match_parent" android:background="#88BBFF" android:layout_marginEnd="5dp" />
-        <View android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="#FF9933" android:layout_marginEnd="5dp" />
-        <View android:layout_width="0dp" android:layout_weight="0.75" android:layout_height="match_parent" android:background="#FF7700" />
+        <View
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:background="#88BBFF"
+            android:layout_marginEnd="5dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:background="@color/lcars_nemesis_cool"
+            android:layout_marginEnd="5dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_weight="0.75"
+            android:layout_height="match_parent"
+            android:background="@color/lcars_nemesis_ghost" />
     </LinearLayout>
 
     <LinearLayout
@@ -62,8 +77,8 @@
             android:stateListAnimator="@null"
             android:text="VOL +"
             android:textColor="#000000"
-            android:textSize="20sp"
-            android:textScaleX="0.6"
+            android:textSize="23sp"
+            android:textScaleX="0.7"
             android:textStyle="bold"
             android:fontFamily="sans-serif-condensed"
             android:gravity="bottom|end"
@@ -79,8 +94,8 @@
             android:stateListAnimator="@null"
             android:text="VOL -"
             android:textColor="#000000"
-            android:textSize="20sp"
-            android:textScaleX="0.6"
+            android:textSize="23sp"
+            android:textScaleX="0.7"
             android:textStyle="bold"
             android:fontFamily="sans-serif-condensed"
             android:gravity="bottom|end"

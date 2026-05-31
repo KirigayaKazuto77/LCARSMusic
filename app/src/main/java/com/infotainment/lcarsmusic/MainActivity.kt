@@ -425,7 +425,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val activeContainerColor = ContextCompat.getColor(this, R.color.lcars_active_yellow)
+        val activeContainerColor = ContextCompat.getColor(this, R.color.lcars_active_orange)
         val frequencySelected = mode == VisualizerMode.FREQUENCY_DOMAIN
         val timeSelected = mode == VisualizerMode.TIME_DOMAIN
 

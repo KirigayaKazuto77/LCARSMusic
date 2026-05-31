@@ -6,6 +6,6 @@
     android:viewportHeight="85">
 
     <path
-        android:fillColor="#37a6d1"
+        android:fillColor="@color/lcars_nemesis_evening"
         android:pathData="M 0,85 A 100,85 0 0,1 100,0 L 195,0 L 195,15 L 175,15 A 50,50 0 0,0 125,65 L 125,85 Z" />
 </vector>
