@@ -271,6 +271,11 @@ class MainActivity : AppCompatActivity() {
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_album_name).text = album?.uppercase()
                 layoutNowPlaying.findViewById<TextView>(R.id.tv_playlist_name).text = "PLAYLIST: ${playlist?.uppercase()}"
 
+                // --- Trigger animation on song change ---
+                if (layoutNowPlaying.visibility == View.VISIBLE) {
+                    animateNowPlayingText()
+                }
+
                 val albumArt = it.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
                 val ivMediaArt = layoutNowPlaying.findViewById<ImageView>(R.id.iv_media_art)
                 ivMediaArt.cameraDistance = 8000f
@@ -637,7 +642,10 @@ class MainActivity : AppCompatActivity() {
         layoutEqualizer.visibility = View.GONE
 
         when (viewName) {
-            "NOW PLAYING" -> layoutNowPlaying.visibility = View.VISIBLE
+            "NOW PLAYING" -> {
+                layoutNowPlaying.visibility = View.VISIBLE
+                animateNowPlayingText() // Trigger the LCARS readout sequence
+            }
             "LIBRARY" -> {
                 layoutLibrary.visibility = View.VISIBLE
                 animateLibraryEntry() // Trigger the LCARS data cascade
@@ -813,6 +821,11 @@ class MainActivity : AppCompatActivity() {
             layoutNowPlaying.findViewById<TextView>(R.id.tv_artist_name).text = song.artist.uppercase()
             layoutNowPlaying.findViewById<TextView>(R.id.tv_album_name).text = "UNKNOWN ALBUM"
             layoutNowPlaying.findViewById<TextView>(R.id.tv_playlist_name).text = "PLAYLIST: ${MediaRepository.playlistName.uppercase()}"
+
+            // --- Trigger animation on repository load ---
+            if (layoutNowPlaying.visibility == View.VISIBLE) {
+                animateNowPlayingText()
+            }
 
             val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
             seekBar.max = song.duration.toInt()
@@ -1523,6 +1536,31 @@ class MainActivity : AppCompatActivity() {
             }
             scroller.targetPosition = pos
             rvMediaList.layoutManager?.startSmoothScroll(scroller)
+        }
+    }
+
+    private fun animateNowPlayingText() {
+        // Collect the 4 specific TextViews in the order they should appear[cite: 14]
+        val textViews = listOf(
+            layoutNowPlaying.findViewById<TextView>(R.id.tv_song_title),
+            layoutNowPlaying.findViewById<TextView>(R.id.tv_artist_name),
+            layoutNowPlaying.findViewById<TextView>(R.id.tv_album_name),
+            layoutNowPlaying.findViewById<TextView>(R.id.tv_playlist_name)
+        )
+
+        // The time to wait before the first line appears
+        val initialDelay = 300L
+
+        textViews.forEachIndexed { index, textView ->
+            // 1. Instantly hide the view
+            textView.alpha = 0f
+
+            // 2. Queue the staggered pop-in with the initial delay offset
+            textView.animate()
+                .alpha(1f)
+                .setDuration(10) // 10ms = Instant visual pop
+                .setStartDelay(initialDelay + (100L * index)) // Wait 300ms, then add 100ms per row
+                .start()
         }
     }
 
