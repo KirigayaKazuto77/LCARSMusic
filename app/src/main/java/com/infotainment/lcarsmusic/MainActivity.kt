@@ -638,7 +638,10 @@ class MainActivity : AppCompatActivity() {
 
         when (viewName) {
             "NOW PLAYING" -> layoutNowPlaying.visibility = View.VISIBLE
-            "LIBRARY" -> layoutLibrary.visibility = View.VISIBLE
+            "LIBRARY" -> {
+                layoutLibrary.visibility = View.VISIBLE
+                animateLibraryEntry() // Trigger the LCARS data cascade
+            }
             "PLAYLIST" -> layoutPlaylist.visibility = View.VISIBLE
             "EQUALIZER" -> {
                 layoutEqualizer.visibility = View.VISIBLE
@@ -1462,6 +1465,64 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             false // Return false to allow standard onClick listeners to fire
+        }
+    }
+
+    private fun animateLibraryEntry() {
+        val header = layoutLibrary.findViewById<View>(R.id.library_header_container)
+        val columns = layoutLibrary.findViewById<View>(R.id.library_column_headers)
+
+        // 1. Hide everything initially
+        header.alpha = 0f
+        columns.alpha = 0f
+        rvMediaList.visibility = View.INVISIBLE // Hide the list while headers animate
+
+        // 2. Fade in Header and Columns (500ms)
+        columns.animate().alpha(1f).setDuration(500).start()
+
+        // 3. Chain the staggered data stream to start exactly when the header finishes
+        header.animate().alpha(1f).setDuration(500).withEndAction {
+
+            // Make the container visible right as the staggered pop-in begins
+            rvMediaList.visibility = View.VISIBLE
+
+            val animation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.item_slide_down)
+            val controller = android.view.animation.LayoutAnimationController(animation).apply {
+                // 10ms duration * 10.0f delay multiplier = exactly 100ms stagger per row
+                delay = 10.0f
+                order = android.view.animation.LayoutAnimationController.ORDER_NORMAL
+            }
+
+            rvMediaList.layoutAnimation = controller
+            rvMediaList.adapter?.notifyDataSetChanged()
+            rvMediaList.scheduleLayoutAnimation()
+
+            // 4. Scroll to currently playing song AFTER the layout animation finishes
+            rvMediaList.layoutAnimationListener = object : android.view.animation.Animation.AnimationListener {
+                override fun onAnimationStart(animation: android.view.animation.Animation?) {}
+                override fun onAnimationRepeat(animation: android.view.animation.Animation?) {}
+                override fun onAnimationEnd(animation: android.view.animation.Animation?) {
+                    scrollToActiveSongSmoothly()
+                }
+            }
+
+        }.start()
+    }
+
+    private fun scrollToActiveSongSmoothly() {
+        val song = MediaRepository.getCurrentSong() ?: return
+        val pos = songAdapter.getPositionForId(song.id)
+
+        if (pos != -1) {
+            val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(this@MainActivity) {
+                override fun calculateSpeedPerPixel(displayMetrics: android.util.DisplayMetrics): Float {
+                    // Default speed is 25f. Increasing this to 150f slows the scroll down,
+                    // providing a smooth ~500ms cinematic glide to the active track.
+                    return 150f / displayMetrics.densityDpi
+                }
+            }
+            scroller.targetPosition = pos
+            rvMediaList.layoutManager?.startSmoothScroll(scroller)
         }
     }
 
