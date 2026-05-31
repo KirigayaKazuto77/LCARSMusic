@@ -165,11 +165,13 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
 
         override fun onSetShuffleMode(shuffleMode: Int) {
             MediaRepository.shuffleMode = shuffleMode
+            playbackStateManager.saveShuffleMode(shuffleMode)
             updatePlaybackState(if (isPlaying()) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED)
         }
 
         override fun onSetRepeatMode(repeatMode: Int) {
             MediaRepository.repeatMode = repeatMode
+            playbackStateManager.saveRepeatMode(repeatMode)
             updatePlaybackState(if (isPlaying()) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED)
         }
 
@@ -298,6 +300,8 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         val song = MediaRepository.getCurrentSong()
         if (song != null) {
             prepareSong(song, PlaybackStateCompat.STATE_PAUSED, persist = false)
+        } else {
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED)
         }
     }
 

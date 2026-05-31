@@ -116,12 +116,13 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tv_metric_now_playing"
                     android:layout_width="70dp"
                     android:layout_height="50dp"
                     android:layout_marginStart="10dp"
                     android:gravity="fill_vertical|end"
                     android:scaleY="2.0"
-                    android:text="99K"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="35sp"
                     android:textStyle="bold" />
@@ -171,12 +172,13 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tv_metric_library"
                     android:layout_width="70dp"
                     android:layout_height="50dp"
                     android:layout_marginStart="10dp"
                     android:gravity="fill_vertical|end"
                     android:scaleY="2.0"
-                    android:text="99K"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="35sp"
                     android:textStyle="bold" />
@@ -226,12 +228,13 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tv_metric_playlist"
                     android:layout_width="70dp"
                     android:layout_height="50dp"
                     android:layout_marginStart="10dp"
                     android:gravity="fill_vertical|end"
                     android:scaleY="2.0"
-                    android:text="99K"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="35sp"
                     android:textStyle="bold" />
@@ -281,12 +284,13 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tv_metric_equalizer"
                     android:layout_width="70dp"
                     android:layout_height="50dp"
                     android:layout_marginStart="10dp"
                     android:gravity="fill_vertical|end"
                     android:scaleY="2.0"
-                    android:text="99K"
+                    android:text="0"
                     android:textColor="#FFFFFF"
                     android:textSize="35sp"
                     android:textStyle="bold" />

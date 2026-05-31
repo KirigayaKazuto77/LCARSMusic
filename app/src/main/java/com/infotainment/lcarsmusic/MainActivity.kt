@@ -168,6 +168,9 @@ class MainActivity : AppCompatActivity() {
             null
         )
 
+        val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+        registerReceiver(volumeReceiver, filter)
+
         initUI()
         registerScreenStateReceiver()
         checkPermissions()
@@ -306,6 +309,8 @@ class MainActivity : AppCompatActivity() {
                         rvMediaList.scrollToPosition(pos)
                     }
                 }
+
+                updateMetricsUI()
             }
         }
     }
@@ -398,6 +403,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setVisualizerMode(loadSavedVisualizerMode())
+        updateMetricsUI()
     }
 
     private fun setVisualizerMode(mode: VisualizerMode) {
@@ -710,6 +716,7 @@ class MainActivity : AppCompatActivity() {
             allSongs = MediaScanner.scanDevice(this@MainActivity)
             val folders = allSongs.map { it.folderName }.distinct().sorted()
             playlistAdapter.updateFolders(folders)
+            updateMetricsUI()
             
             isMediaLoaded = true
             checkAndRehydrate()
@@ -731,6 +738,8 @@ class MainActivity : AppCompatActivity() {
 
         val headerTitle = layoutLibrary.findViewById<TextView>(R.id.tv_library_header_title)
         headerTitle.text = (currentFolder ?: "ALL SONGS").uppercase()
+
+        updateMetricsUI()
     }
 
     private fun checkAndRehydrate() {
@@ -755,6 +764,8 @@ class MainActivity : AppCompatActivity() {
         
         MediaRepository.currentQueue = filteredSongs
         MediaRepository.playlistName = lastPlaylist
+        MediaRepository.shuffleMode = playbackStateManager.getShuffleMode()
+        MediaRepository.repeatMode = playbackStateManager.getRepeatMode()
         
         // Step B: Load last song and find index (0-based)
         val lastSongId = playbackStateManager.getLastSongId()
@@ -791,6 +802,50 @@ class MainActivity : AppCompatActivity() {
             val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
             seekBar.max = song.duration.toInt()
             findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(song.duration)
+        }
+    }
+
+    private fun formatLcarsMetric(value: Int): String {
+        return when {
+            value < 1000 -> value.toString()
+            value < 10000 -> String.format(Locale.US, "%.1fK", value / 1000f) // e.g., 9.1K
+            else -> "${value / 1000}K" // e.g., 55K (Drops the decimal entirely)
+        }
+    }
+
+    private fun updateMetricsUI() {
+        // 1. Now Playing (Current Queue Index + 1)
+        val nowPlayingMetric = if (MediaRepository.currentQueue.isNotEmpty() && MediaRepository.currentQueueIndex >= 0) {
+            MediaRepository.currentQueueIndex + 1
+        } else {
+            0
+        }
+        findViewById<TextView>(R.id.tv_metric_now_playing)?.text = formatLcarsMetric(nowPlayingMetric)
+
+        // 2. Library (Number of songs in the currently active playlist/folder)
+        val libraryMetric = songAdapter.itemCount
+        findViewById<TextView>(R.id.tv_metric_library)?.text = formatLcarsMetric(libraryMetric)
+
+        // 3. Playlist (Total number of folders, excluding "ALL SONGS")
+        val playlistMetric = maxOf(0, playlistAdapter.itemCount - 1)
+        findViewById<TextView>(R.id.tv_metric_playlist)?.text = formatLcarsMetric(playlistMetric)
+
+        // 4. Equalizer (System Volume Percentage)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val volumePercent = if (maxVolume > 0) {
+            (currentVolume.toFloat() / maxVolume * 100).toInt()
+        } else {
+            0
+        }
+        findViewById<TextView>(R.id.tv_metric_equalizer)?.text = formatLcarsMetric(volumePercent)
+    }
+
+    private val volumeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "android.media.VOLUME_CHANGED_ACTION") {
+                updateMetricsUI()
+            }
         }
     }
 
@@ -917,10 +972,12 @@ class MainActivity : AppCompatActivity() {
         // 3. Keep original volume control logic intact
         btnVolUp.setOnClickListener {
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+            updateMetricsUI()
         }
 
         btnVolDown.setOnClickListener {
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+            updateMetricsUI()
         }
     }
 
@@ -1425,6 +1482,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterScreenStateReceiver()
+        unregisterReceiver(volumeReceiver)
         visualizerView.release()
         audioHandler.post {
             audioHandler.looper.quitSafely()
