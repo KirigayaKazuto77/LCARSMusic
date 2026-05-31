@@ -19,16 +19,27 @@
             android:text="ALL SONGS"
             android:textAllCaps="true"
             android:textColor="#FFFFFF"
-            android:textSize="20sp" />
+            android:textSize="25sp"
+            android:textScaleX="0.7"
+            android:textStyle="bold" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_scan_device"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="125dp"
+            android:layout_height="50dp"
             android:layout_alignParentEnd="true"
-            android:minHeight="48dp"
-            android:text="SCAN DEVICE"
-            android:textAllCaps="true" />
+            android:background="@drawable/bg_lcars_pill_button"
+            android:backgroundTint="@color/lcars_classic_blue"
+            android:fontFamily="sans-serif-condensed"
+            android:gravity="bottom|end"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
+            android:stateListAnimator="@null"
+            android:text="SCAN"
+            android:textColor="#000000"
+            android:textScaleX="0.7"
+            android:textSize="23sp"
+            android:textStyle="bold" />
     </RelativeLayout>
 
     <!-- Column Headers -->
@@ -36,41 +47,52 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="#333333">
+        android:layout_marginBottom="10dp"
+        android:padding="8dp">
 
         <TextView
-            android:layout_width="48dp"
+            android:layout_width="70dp"
             android:layout_height="wrap_content"
-            android:text="#"
+            android:text="SONG ID"
             android:textAllCaps="true"
             android:textColor="#AAAAAA"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="3"
-            android:text="TITLE"
-            android:textAllCaps="true"
-            android:textColor="#AAAAAA"
+            android:textSize="25sp"
+            android:textScaleX="0.7"
+            android:textAlignment="textEnd"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:text="ARTIST"
+            android:layout_marginStart="30dp"
+            android:text="TITLE"
             android:textAllCaps="true"
             android:textColor="#AAAAAA"
+            android:textSize="25sp"
+            android:textScaleX="0.7"
             android:textStyle="bold" />
 
         <TextView
-            android:layout_width="80dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ARTIST"
+            android:textAllCaps="true"
+            android:textColor="#AAAAAA"
+            android:textSize="25sp"
+            android:textScaleX="0.7"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="85dp"
             android:layout_height="wrap_content"
             android:text="LENGTH"
             android:textAllCaps="true"
             android:textColor="#AAAAAA"
+            android:textSize="25sp"
+            android:textScaleX="0.7"
+            android:textAlignment="textEnd"
             android:textStyle="bold" />
     </LinearLayout>
 

@@ -5,25 +5,32 @@
     android:orientation="horizontal"
     android:padding="8dp"
     android:gravity="center_vertical"
-    android:minHeight="48dp"
-    android:background="?attr/selectableItemBackground">
+    android:minHeight="48dp">
 
     <TextView
         android:id="@+id/tv_item_id"
-        android:layout_width="48dp"
+        android:layout_width="72dp"
         android:layout_height="wrap_content"
         android:text="1"
         android:textAllCaps="true"
-        android:textColor="#FFFFFF" />
+        android:textSize="25sp"
+        android:textScaleX="0.7"
+        android:textStyle="bold"
+        android:textAlignment="textEnd"
+        android:textColor="@color/lcars_nemesis_evening" />
 
     <TextView
         android:id="@+id/tv_item_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="3"
+        android:layout_weight="2"
+        android:layout_marginStart="30dp"
         android:text="SONG TITLE"
         android:textAllCaps="true"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/lcars_nemesis_evening"
+        android:textSize="25sp"
+        android:textScaleX="0.7"
+        android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end" />
 
@@ -31,17 +38,24 @@
         android:id="@+id/tv_item_artist"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:text="ARTIST NAME"
         android:textAllCaps="true"
-        android:textColor="#CCCCCC" />
+        android:textSize="25sp"
+        android:textScaleX="0.7"
+        android:textStyle="bold"
+        android:textColor="@color/lcars_nemesis_evening" />
 
     <TextView
         android:id="@+id/tv_item_duration"
-        android:layout_width="80dp"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="00:00:00"
         android:textAllCaps="true"
-        android:textColor="#AAAAAA" />
+        android:textSize="25sp"
+        android:textScaleX="0.7"
+        android:textStyle="bold"
+        android:textAlignment="textEnd"
+        android:textColor="@color/lcars_nemesis_evening" />
 
 </LinearLayout>

@@ -71,7 +71,7 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_vol_up"
             android:layout_width="match_parent"
-            android:layout_height="75dp"
+            android:layout_height="85dp"
             android:layout_marginBottom="5dp"
             android:background="@color/lcars_classic_golden_orange"
             android:stateListAnimator="@null"
@@ -88,7 +88,7 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_vol_down"
             android:layout_width="match_parent"
-            android:layout_height="75dp"
+            android:layout_height="85dp"
             android:layout_marginBottom="5dp"
             android:background="@color/lcars_classic_mars"
             android:stateListAnimator="@null"

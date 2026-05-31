@@ -71,19 +71,17 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         override fun onPlay() {
-            var song = MediaRepository.getCurrentSong()
-            if (song == null && MediaRepository.currentQueue.isNotEmpty()) {
-                MediaRepository.currentQueueIndex = 0
-                song = MediaRepository.getCurrentSong()
-            }
+            val song = MediaRepository.getCurrentSong()
 
             if (song != null) {
                 if (song.uri == currentPlayingUri && mediaPlayer != null) {
                     // Resume existing track
-                    promoteToForegroundService()
-                    play()
-                    updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
-                    updateNotification()
+                    if (requestAudioFocus()) {
+                        promoteToForegroundService()
+                        play()
+                        updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+                        updateNotification()
+                    }
                 } else {
                     // Start new track
                     prepareSong(song, PlaybackStateCompat.STATE_PAUSED)
@@ -116,10 +114,12 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         }
 
         private fun startPreparedSong() {
-            promoteToForegroundService()
-            play() // Force play when explicitly requested by transport controls.
-            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
-            updateNotification()
+            if (requestAudioFocus()) {
+                promoteToForegroundService()
+                play() // Force play when explicitly requested by transport controls.
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+                updateNotification()
+            }
         }
 
         private fun selectSong(song: Song) {
@@ -188,27 +188,25 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun prepareSong(song: Song, targetState: Int, persist: Boolean = true) {
-        if (requestAudioFocus()) {
-            try {
-                mediaPlayer?.reset()
-                mediaPlayer?.setDataSource(this, song.uri)
-                mediaPlayer?.prepare()
-                currentPlayingUri = song.uri
-                latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
-                initializeEqualizerForSession(latestAudioSessionId)
-                Log.d(
-                    VISUALIZER_LOG_TAG,
-                    "SERVICE_CAPTURED_AUDIO_SESSION_ID sessionId=$latestAudioSessionId title=${song.title}"
-                )
-                updateMetadata(song, MediaRepository.playlistName)
-                updatePlaybackState(targetState)
-                if (persist) {
-                    persistPlaybackSelection(song)
-                }
-                updateNotification()
-            } catch (e: Exception) {
-                e.printStackTrace()
+        try {
+            mediaPlayer?.reset()
+            mediaPlayer?.setDataSource(this, song.uri)
+            mediaPlayer?.prepare()
+            currentPlayingUri = song.uri
+            latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
+            initializeEqualizerForSession(latestAudioSessionId)
+            Log.d(
+                VISUALIZER_LOG_TAG,
+                "SERVICE_CAPTURED_AUDIO_SESSION_ID sessionId=$latestAudioSessionId title=${song.title}"
+            )
+            updateMetadata(song, MediaRepository.playlistName)
+            updatePlaybackState(targetState)
+            if (persist) {
+                persistPlaybackSelection(song)
             }
+            updateNotification()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

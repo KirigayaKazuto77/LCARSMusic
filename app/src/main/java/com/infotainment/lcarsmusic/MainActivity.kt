@@ -703,9 +703,16 @@ class MainActivity : AppCompatActivity() {
         rvPlaylistList.adapter = playlistAdapter
 
         // Scan Buttons
-        layoutLibrary.findViewById<Button>(R.id.btn_scan_device).setOnClickListener {
+        val btnScanDevice = layoutLibrary.findViewById<Button>(R.id.btn_scan_device)
+
+        // Capture the XML default color and apply the dynamic touch listener
+        captureDefaultBackgroundTints(btnScanDevice)
+        applyTouchEffect(btnScanDevice, R.color.lcars_classic_blue_dark)
+
+        btnScanDevice.setOnClickListener {
             performScan()
         }
+
         layoutPlaylist.findViewById<Button>(R.id.btn_scan_playlists).setOnClickListener {
             performScan()
         }
@@ -737,7 +744,12 @@ class MainActivity : AppCompatActivity() {
         songAdapter.updateSongs(filteredSongs)
 
         val headerTitle = layoutLibrary.findViewById<TextView>(R.id.tv_library_header_title)
-        headerTitle.text = (currentFolder ?: "ALL SONGS").uppercase()
+
+        // Resolve the playlist name, defaulting to "ALL SONGS" if null
+        val playlistName = currentFolder ?: "ALL SONGS"
+
+        // Prepend the requested string and force uppercase for the LCARS aesthetic
+        headerTitle.text = "CURRENT PLAYLIST: ${playlistName.uppercase()}"
 
         updateMetricsUI()
     }

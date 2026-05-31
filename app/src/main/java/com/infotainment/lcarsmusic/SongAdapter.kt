@@ -33,13 +33,28 @@ class SongAdapter(
         holder.tvTitle.text = song.title.uppercase()
         holder.tvArtist.text = song.artist.uppercase()
         holder.tvDuration.text = MediaScanner.formatDuration(song.duration)
-        
+
+        // Fetch the context and define our two color states
+        val context = holder.itemView.context
+        val defaultTextColor = ContextCompat.getColor(context, R.color.lcars_nemesis_evening)
+        val activeTextColor = Color.WHITE
+
         if (song.id == currentlyPlayingSongId) {
-            holder.itemView.setBackgroundColor(0x3304AA6D) // Dimmed LCARS Green
+            // Highlighted State: Dimmed Green Background + White Text
+            holder.itemView.setBackgroundColor(0x3304AA6D)
+            holder.tvId.setTextColor(activeTextColor)
+            holder.tvTitle.setTextColor(activeTextColor)
+            holder.tvArtist.setTextColor(activeTextColor)
+            holder.tvDuration.setTextColor(activeTextColor)
         } else {
+            // Default State: Transparent Background + LCARS Nemesis Evening Text
             holder.itemView.setBackgroundColor(Color.TRANSPARENT)
+            holder.tvId.setTextColor(defaultTextColor)
+            holder.tvTitle.setTextColor(defaultTextColor)
+            holder.tvArtist.setTextColor(defaultTextColor)
+            holder.tvDuration.setTextColor(defaultTextColor)
         }
-        
+
         holder.itemView.setOnClickListener { onSongClicked(song) }
     }
 
