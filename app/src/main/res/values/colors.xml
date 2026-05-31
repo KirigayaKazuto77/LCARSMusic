@@ -20,6 +20,7 @@
     <color name="lcars_classic_butterscotch">#ff9966</color>
     <color name="lcars_classic_gold">#ffaa00</color>
     <color name="lcars_classic_golden_orange">#ff9900</color>
+    <color name="lcars_classic_golden_orange_dark">#CC7A00</color>
     <color name="lcars_classic_gray">#666688</color>
     <color name="lcars_classic_green">#999933</color>
     <color name="lcars_classic_ice">#99ccff</color>
@@ -27,6 +28,7 @@
     <color name="lcars_classic_lima_bean">#cccc66</color>
     <color name="lcars_classic_magenta">#cc5599</color>
     <color name="lcars_classic_mars">#ff2200</color>
+    <color name="lcars_classic_mars_dark">#CC1B00</color>
     <color name="lcars_classic_moonlit_violet">#9966ff</color>
     <color name="lcars_classic_orange">#ff8800</color>
     <color name="lcars_classic_peach">#ff8866</color>
@@ -41,6 +43,7 @@
     <!-- LCARS NEMESIS BLUE THEME COLORS -->
     <color name="lcars_nemesis_cardinal">#cc2233</color>
     <color name="lcars_nemesis_cool">#6699ff</color>
+    <color name="lcars_nemesis_cool_dark">#334c7f</color>
     <color name="lcars_nemesis_evening">#2266ff</color>
     <color name="lcars_nemesis_galaxy_gray">#52526a</color>
     <color name="lcars_nemesis_ghost">#88bbff</color>
@@ -70,6 +73,7 @@
     <color name="lcars_lower_decks_padd_arctic_snow">#99ccff</color>
     <color name="lcars_lower_decks_padd_radioactive">#88ffff</color>
     <color name="lcars_lower_decks_padd_beta_blue">#7799dd</color>
+    <color name="lcars_lower_decks_padd_beta_blue_dark">#3b4c6e</color>
     <color name="lcars_lower_decks_padd_night_cloud">#344470</color>
     <color name="lcars_lower_decks_padd_night_rain">#455580</color>
     <color name="lcars_lower_decks_padd_sunset_red">#ff3500</color>

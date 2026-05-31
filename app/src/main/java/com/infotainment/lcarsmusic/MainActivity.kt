@@ -222,29 +222,25 @@ class MainActivity : AppCompatActivity() {
 
         override fun onShuffleModeChanged(shuffleMode: Int) {
             val btnShuffle = findViewById<Button>(R.id.btn_shuffle)
-            val defaultColor = Color.parseColor("#FFCC33") // The default yellow assigned in XML
+            val activeOrange = ContextCompat.getColor(this@MainActivity, R.color.lcars_active_orange)
 
             if (shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL) {
-                btnShuffle.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
+                btnShuffle.backgroundTintList = ColorStateList.valueOf(activeOrange)
             } else {
-                btnShuffle.backgroundTintList = ColorStateList.valueOf(defaultColor)
+                restoreDefaultBackgroundTint(btnShuffle)
             }
         }
 
         override fun onRepeatModeChanged(repeatMode: Int) {
             val btnLoop = findViewById<Button>(R.id.btn_loop)
-            val defaultColor = Color.parseColor("#FFCC33") // The default yellow assigned in XML
+            val activeOrange = ContextCompat.getColor(this@MainActivity, R.color.lcars_active_orange)
 
-            when (repeatMode) {
-                PlaybackStateCompat.REPEAT_MODE_ONE -> {
-                    btnLoop.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_orange_light))
-                }
-                PlaybackStateCompat.REPEAT_MODE_ALL -> {
-                    btnLoop.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_light))
-                }
-                else -> {
-                    btnLoop.backgroundTintList = ColorStateList.valueOf(defaultColor)
-                }
+            // REPEAT_MODE_ONE is our explicit "Enabled" state
+            if (repeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) {
+                btnLoop.backgroundTintList = ColorStateList.valueOf(activeOrange)
+            } else {
+                // Disabled state reverts to default
+                restoreDefaultBackgroundTint(btnLoop)
             }
         }
 
@@ -799,7 +795,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupMediaControls() {
-        findViewById<Button>(R.id.btn_play_pause).setOnClickListener {
+        val btnPrev = findViewById<Button>(R.id.btn_previous)
+        val btnPlayPause = findViewById<Button>(R.id.btn_play_pause)
+        val btnNext = findViewById<Button>(R.id.btn_next)
+        val btnShuffle = findViewById<Button>(R.id.btn_shuffle)
+        val btnLoop = findViewById<Button>(R.id.btn_loop)
+
+        // 1. Capture the XML source-of-truth default colors FIRST
+        captureDefaultBackgroundTints(btnPrev, btnPlayPause, btnNext, btnShuffle, btnLoop)
+
+        // 2. Apply dynamic touch effects
+        applyTouchEffect(btnPrev, R.color.lcars_nemesis_cool_dark)
+        applyTouchEffect(btnPlayPause, R.color.lcars_lower_decks_padd_beta_blue_dark)
+        applyTouchEffect(btnNext, R.color.lcars_nemesis_cool_dark)
+
+        // 3. Keep original Play/Pause, Prev, Next logic
+        btnPlayPause.setOnClickListener {
             val playbackState = mediaController?.playbackState?.state
             if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
                 mediaController?.transportControls?.pause()
@@ -807,11 +818,11 @@ class MainActivity : AppCompatActivity() {
                 playSelectedOrFirstAvailableSong()
             }
         }
+        btnPrev.setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
+        btnNext.setOnClickListener { mediaController?.transportControls?.skipToNext() }
 
-        findViewById<Button>(R.id.btn_previous).setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
-        findViewById<Button>(R.id.btn_next).setOnClickListener { mediaController?.transportControls?.skipToNext() }
-
-        findViewById<Button>(R.id.btn_shuffle).setOnClickListener {
+        // 4. Update Shuffle Logic
+        btnShuffle.setOnClickListener {
             val currentMode = mediaController?.shuffleMode ?: PlaybackStateCompat.SHUFFLE_MODE_NONE
             val nextMode = if (currentMode == PlaybackStateCompat.SHUFFLE_MODE_NONE) {
                 PlaybackStateCompat.SHUFFLE_MODE_ALL
@@ -821,12 +832,13 @@ class MainActivity : AppCompatActivity() {
             mediaController?.transportControls?.setShuffleMode(nextMode)
         }
 
-        findViewById<Button>(R.id.btn_loop).setOnClickListener {
-            val currentMode = mediaController?.repeatMode ?: PlaybackStateCompat.REPEAT_MODE_NONE
-            val nextMode = when (currentMode) {
-                PlaybackStateCompat.REPEAT_MODE_NONE -> PlaybackStateCompat.REPEAT_MODE_ALL
-                PlaybackStateCompat.REPEAT_MODE_ALL -> PlaybackStateCompat.REPEAT_MODE_ONE
-                else -> PlaybackStateCompat.REPEAT_MODE_NONE
+        // 5. Update Loop Logic (Two modes only: ALL and ONE)
+        btnLoop.setOnClickListener {
+            val currentMode = mediaController?.repeatMode ?: PlaybackStateCompat.REPEAT_MODE_ALL
+            val nextMode = if (currentMode == PlaybackStateCompat.REPEAT_MODE_ONE) {
+                PlaybackStateCompat.REPEAT_MODE_ALL // Disabled (Loops playlist natively)
+            } else {
+                PlaybackStateCompat.REPEAT_MODE_ONE // Enabled (Loops current track)
             }
             mediaController?.transportControls?.setRepeatMode(nextMode)
         }
@@ -895,6 +907,14 @@ class MainActivity : AppCompatActivity() {
         val btnVolUp = findViewById<Button>(R.id.btn_vol_up)
         val btnVolDown = findViewById<Button>(R.id.btn_vol_down)
 
+        // 1. Capture the XML source-of-truth default colors FIRST
+        captureDefaultBackgroundTints(btnVolUp, btnVolDown)
+
+        // 2. Apply dynamic touch effects for a slightly darker shade on press
+        applyTouchEffect(btnVolUp, R.color.lcars_classic_golden_orange_dark)
+        applyTouchEffect(btnVolDown, R.color.lcars_classic_mars_dark)
+
+        // 3. Keep original volume control logic intact
         btnVolUp.setOnClickListener {
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
         }
@@ -1359,6 +1379,21 @@ class MainActivity : AppCompatActivity() {
             this.action = action
         }
         startService(intent)
+    }
+
+    private fun applyTouchEffect(button: View, darkColorResId: Int) {
+        button.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    view.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, darkColorResId))
+                }
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    restoreDefaultBackgroundTint(view)
+                }
+            }
+            false // Return false to allow standard onClick listeners to fire
+        }
     }
 
     private fun terminateApp() {

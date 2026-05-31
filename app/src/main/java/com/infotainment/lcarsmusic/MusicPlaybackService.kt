@@ -134,13 +134,29 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         }
 
         override fun onSkipToNext() {
-            MediaRepository.skipToNext()
-            onPlay()
+            if (MediaRepository.repeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) {
+                // Loop is enabled: Restart the current track
+                mediaPlayer?.seekTo(0)
+                play()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            } else {
+                // Loop is disabled: Advance queue normally
+                MediaRepository.skipToNext()
+                onPlay()
+            }
         }
 
         override fun onSkipToPrevious() {
-            MediaRepository.skipToPrevious()
-            onPlay()
+            if (MediaRepository.repeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) {
+                // Loop is enabled: Restart the current track
+                mediaPlayer?.seekTo(0)
+                play()
+                updatePlaybackState(PlaybackStateCompat.STATE_PLAYING)
+            } else {
+                // Loop is disabled: Reverse queue normally
+                MediaRepository.skipToPrevious()
+                onPlay()
+            }
         }
 
         override fun onStop() {
