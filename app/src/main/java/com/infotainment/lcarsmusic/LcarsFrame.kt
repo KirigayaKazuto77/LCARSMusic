@@ -2,6 +2,7 @@ package com.infotainment.lcarsmusic
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
 import android.content.Context
@@ -162,6 +163,96 @@ class LcarsFrame @JvmOverloads constructor(
             }
             lp.gravity = Gravity.CENTER
             contentContainer.addView(child, index, lp)
+        }
+    }
+
+    private var frameAnimator: AnimatorSet? = null
+
+    /**
+     * Triggered every time the "Now Playing" view is opened.
+     * Starts fully closed, slides open, and fades the art in.
+     */
+    fun runEntranceSequence() {
+        post {
+            frameAnimator?.cancel()
+
+            // Calculate the exact distance to slide flush against the right column
+            val slideDistance = contentContainer.width.toFloat()
+            val leftSideViews = listOf(
+                findViewById<View>(R.id.corner_tl),
+                findViewById<View>(R.id.left_column),
+                findViewById<View>(R.id.corner_bl)
+            )
+
+            // 1. Force Initial "Closed" State
+            leftSideViews.forEach { it.translationX = slideDistance }
+            contentContainer.alpha = 0f
+
+            // 2. Slide Left (Open Door)
+            val openAnimations = leftSideViews.map { view ->
+                ObjectAnimator.ofFloat(view, "translationX", slideDistance, 0f).setDuration(500)
+            }
+            val openSet = AnimatorSet().apply { playTogether(openAnimations) }
+
+            // 3. Fade In Content
+            val fadeArt = ObjectAnimator.ofFloat(contentContainer, "alpha", 0f, 1f).setDuration(500)
+
+            frameAnimator = AnimatorSet().apply {
+                playSequentially(openSet, fadeArt)
+                start()
+            }
+        }
+    }
+
+    /**
+     * Triggered on Track Change (Prev/Next).
+     * Fades out -> Closes -> Opens -> Fades in.
+     * @param updateMediaArt Callback executed precisely when the art is hidden.
+     */
+    fun runTrackChangeSequence(updateMediaArt: () -> Unit) {
+        post {
+            frameAnimator?.cancel()
+
+            val slideDistance = contentContainer.width.toFloat()
+            val leftSideViews = listOf(
+                findViewById<View>(R.id.corner_tl),
+                findViewById<View>(R.id.left_column),
+                findViewById<View>(R.id.corner_bl)
+            )
+
+            // 1. Fade Out Current Art
+            val fadeOut = ObjectAnimator.ofFloat(contentContainer, "alpha", contentContainer.alpha, 0f).apply {
+                duration = 500
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        // SAFE ZONE: The view is completely transparent.
+                        // We trigger your UI logic here to swap the bitmap or load the Federation fallback.
+                        updateMediaArt()
+                    }
+                })
+            }
+
+            // 2. Slide Right (Close Door)
+            val closeAnimations = leftSideViews.map { view ->
+                // Uses view.translationX as the start point to prevent snapping if interrupted
+                ObjectAnimator.ofFloat(view, "translationX", view.translationX, slideDistance).setDuration(500)
+            }
+            val closeSet = AnimatorSet().apply { playTogether(closeAnimations) }
+
+            // 3. Slide Left (Open Door)
+            val openAnimations = leftSideViews.map { view ->
+                ObjectAnimator.ofFloat(view, "translationX", slideDistance, 0f).setDuration(500)
+            }
+            val openSet = AnimatorSet().apply { playTogether(openAnimations) }
+
+            // 4. Fade In New Art
+            val fadeIn = ObjectAnimator.ofFloat(contentContainer, "alpha", 0f, 1f).setDuration(500)
+
+            // Execute the chain sequentially
+            frameAnimator = AnimatorSet().apply {
+                playSequentially(fadeOut, closeSet, openSet, fadeIn)
+                start()
+            }
         }
     }
 }

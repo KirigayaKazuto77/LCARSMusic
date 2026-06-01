@@ -248,74 +248,58 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-            metadata?.let {
-                val mediaId = it.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
-                val title = it.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
-                val artist = it.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
-                val album = it.getString(MediaMetadataCompat.METADATA_KEY_ALBUM)
-                val playlist = it.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE)
-                val trackDuration = it.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
-                val sessionId = it.getLong(MusicPlaybackService.EXTRA_AUDIO_SESSION_ID).toInt()
-                val INSIGNIA_ROTATION_DURATION = 5000L
+            // AGGRESSIVE SAFETY NET: Instantly drop the visualizer when the track changes naturally
+            visualizerView.release()
 
-                if (sessionId > 0) {
-                    handleVisualizerAudioSession(
-                        sessionId,
-                        "metadata",
-                        forceVisualizerRebuild = true
-                    )
-                }
+            super.onMetadataChanged(metadata)
 
-                layoutNowPlaying.findViewById<TextView>(R.id.tv_song_title).text = title?.uppercase()
-                layoutNowPlaying.findViewById<TextView>(R.id.tv_artist_name).text = artist?.uppercase()
-                layoutNowPlaying.findViewById<TextView>(R.id.tv_album_name).text = album?.uppercase()
-                layoutNowPlaying.findViewById<TextView>(R.id.tv_playlist_name).text = "PLAYLIST: ${playlist?.uppercase()}"
+            if (metadata == null) return
 
-                // --- Trigger animation on song change ---
-                if (layoutNowPlaying.visibility == View.VISIBLE) {
-                    animateNowPlayingText()
-                }
+            // --- 1. INSTANT UI UPDATES ---
+            val title = metadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: "UNKNOWN TITLE"
+            val artist = metadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: "UNKNOWN ARTIST"
+            val album = metadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM) ?: "UNKNOWN ALBUM"
 
-                val albumArt = it.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
-                val ivMediaArt = layoutNowPlaying.findViewById<ImageView>(R.id.iv_media_art)
-                ivMediaArt.cameraDistance = 8000f
+            findViewById<TextView>(R.id.tv_song_title)?.text = title
+            findViewById<TextView>(R.id.tv_artist_name)?.text = artist
+            findViewById<TextView>(R.id.tv_album_name)?.text = album
 
-                if (albumArt != null) {
-                    ivMediaArt.setImageBitmap(albumArt)
-                    ivMediaArt.rotationY = 0f // Reset the 3D rotation when real art is present
-                    ivMediaArt.clearAnimation()
+            updateMetricsUI()
+
+            // FIXED: Trigger the staggered text animation on Next/Prev button press.
+            // We check visibility so it doesn't run needlessly if the user is in the Library view.
+            if (layoutNowPlaying.visibility == View.VISIBLE) {
+                animateNowPlayingText()
+            }
+
+            // --- 2. THE TRACK CHANGE SEQUENCE (DELAYED ARTWORK SWAP) ---
+            val lcarsFrame = findViewById<LcarsFrame>(R.id.frame_media_art)
+            val ivMediaArt = findViewById<ImageView>(R.id.iv_media_art)
+
+            lcarsFrame?.runTrackChangeSequence {
+                val bitmap = metadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+
+                if (bitmap != null) {
+                    ivMediaArt?.setImageBitmap(bitmap)
+
+                    // Clear all animations and reset BOTH 2D and 3D rotations
+                    ivMediaArt?.clearAnimation()
+                    ivMediaArt?.animate()?.cancel()
+                    ivMediaArt?.rotation = 0f
+                    ivMediaArt?.rotationY = 0f
                 } else {
-                    ivMediaArt.setImageResource(R.drawable.federation)
+                    ivMediaArt?.setImageResource(R.drawable.federation)
 
-                    // Create an animator that targets the Y-axis rotation property
-                    val flipAnimator = android.animation.ObjectAnimator.ofFloat(ivMediaArt, "rotationY", 0f, 360f)
-
-                    // We use a literal value (3000L) to avoid declaring a 'duration' variable entirely.
-                    // This property is a system-required setting for the animator.
-                    flipAnimator.duration = 15000L
-
-                    flipAnimator.repeatCount = android.animation.ValueAnimator.INFINITE
-                    flipAnimator.interpolator = android.view.animation.LinearInterpolator()
-                    flipAnimator.start()
-                }
-
-                val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
-                seekBar.max = trackDuration.toInt()
-                seekBar.progress = 0
-                findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(0L)
-                findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(trackDuration)
-                findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(trackDuration)}"
-
-                // Update Library Highlight and Scroll
-                mediaId?.toLongOrNull()?.let { id ->
-                    songAdapter.updateHighlight(id)
-                    val pos = songAdapter.getPositionForId(id)
-                    if (pos != -1) {
-                        rvMediaList.scrollToPosition(pos)
+                    ivMediaArt?.let { view ->
+                        // FIXED: rotationY creates a 3D globe-spinning effect
+                        val rotate = android.animation.ObjectAnimator.ofFloat(view, "rotationY", 0f, 360f).apply {
+                            duration = 15000L
+                            repeatCount = android.animation.ObjectAnimator.INFINITE
+                            interpolator = android.view.animation.LinearInterpolator()
+                        }
+                        rotate.start()
                     }
                 }
-
-                updateMetricsUI()
             }
         }
     }
@@ -636,6 +620,7 @@ class MainActivity : AppCompatActivity() {
         tvViewTitle.text = viewName.uppercase()
         updateNavigationSelection(viewName)
 
+        // 1. Hide all sub-views initially
         layoutNowPlaying.visibility = View.GONE
         layoutLibrary.visibility = View.GONE
         layoutPlaylist.visibility = View.GONE
@@ -644,7 +629,13 @@ class MainActivity : AppCompatActivity() {
         when (viewName) {
             "NOW PLAYING" -> {
                 layoutNowPlaying.visibility = View.VISIBLE
-                animateNowPlayingText() // Trigger the LCARS readout sequence
+
+                // 1. Trigger the LCARS blast door entrance animation
+                val lcarsFrame = findViewById<LcarsFrame>(R.id.frame_media_art)
+                lcarsFrame?.runEntranceSequence()
+
+                // 2. RESTORED: Trigger the staggered text pop-in
+                animateNowPlayingText()
             }
             "LIBRARY" -> {
                 layoutLibrary.visibility = View.VISIBLE
@@ -656,7 +647,7 @@ class MainActivity : AppCompatActivity() {
                 setupEqualizerUI()
             }
         }
-        
+
         sharedPreferences.edit().putString("LAST_VIEW", viewName).apply()
     }
 
@@ -691,14 +682,17 @@ class MainActivity : AppCompatActivity() {
         songAdapter = SongAdapter(emptyList()) { song ->
             val currentList = (rvMediaList.adapter as SongAdapter).getSongs()
             val index = currentList.indexOf(song)
-            
+
             MediaRepository.currentQueue = currentList
             MediaRepository.currentQueueIndex = index
             MediaRepository.playlistName = currentFolder ?: "ALL SONGS"
-            
-            // Explicitly call PLAY when user clicks a song from the library
+
             songAdapter.updateHighlight(song.id)
-            mediaController?.transportControls?.playFromUri(song.uri, null)
+
+            // Wrap the list item play command
+            safeTransportAction {
+                mediaController?.transportControls?.playFromUri(song.uri, null)
+            }
         }
         rvMediaList.adapter = songAdapter
 
@@ -898,11 +892,12 @@ class MainActivity : AppCompatActivity() {
             if (playbackState == PlaybackStateCompat.STATE_PLAYING) {
                 mediaController?.transportControls?.pause()
             } else {
-                playSelectedOrFirstAvailableSong()
+                // Wrap the play command
+                safeTransportAction { playSelectedOrFirstAvailableSong() }
             }
         }
-        btnPrev.setOnClickListener { mediaController?.transportControls?.skipToPrevious() }
-        btnNext.setOnClickListener { mediaController?.transportControls?.skipToNext() }
+        btnPrev.setOnClickListener { safeTransportAction { mediaController?.transportControls?.skipToPrevious() } }
+        btnNext.setOnClickListener { safeTransportAction { mediaController?.transportControls?.skipToNext() } }
 
         // 4. Update Shuffle Logic
         btnShuffle.setOnClickListener {
@@ -1479,6 +1474,17 @@ class MainActivity : AppCompatActivity() {
             }
             false // Return false to allow standard onClick listeners to fire
         }
+    }
+
+    private fun safeTransportAction(action: () -> Unit) {
+        // 1. Programmatically release the visualizer to detach from the active audio session
+        visualizerView.release()
+
+        // 2. Give the audio thread a 50ms window to safely tear down the native resources
+        // before we instruct the background service to destroy the current track.
+        Handler(Looper.getMainLooper()).postDelayed({
+            action()
+        }, 50)
     }
 
     private fun animateLibraryEntry() {

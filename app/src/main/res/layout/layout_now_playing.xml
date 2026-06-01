@@ -23,7 +23,7 @@
             android:fontFamily="sans-serif-condensed"
             android:text="SONG TITLE"
             android:textAllCaps="true"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/lcars_classic_golden_orange"
             android:textScaleX="0.6"
             android:lineSpacingMultiplier="0.8"
             android:textSize="40sp"
