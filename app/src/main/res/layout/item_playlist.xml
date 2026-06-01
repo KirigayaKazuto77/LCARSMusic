@@ -21,7 +21,11 @@
         android:layout_height="wrap_content"
         android:text="FOLDER NAME"
         android:textAllCaps="true"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp" />
+        android:textSize="25sp"
+        android:textScaleX="0.7"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:textColor="@color/lcars_nemesis_evening"
+        android:ellipsize="end" />
 
 </LinearLayout>

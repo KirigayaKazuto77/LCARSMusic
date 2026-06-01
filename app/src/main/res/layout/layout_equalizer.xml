@@ -3,14 +3,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#000000">
+    android:paddingHorizontal="10dp" >
 
     <!-- Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:background="#222222">
+        android:padding="8dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -19,7 +18,9 @@
             android:text="EQUALIZER"
             android:textAllCaps="true"
             android:textColor="#FFFFFF"
-            android:textSize="20sp" />
+            android:textSize="25sp"
+            android:textScaleX="0.7"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -27,22 +28,42 @@
             android:layout_alignParentEnd="true"
             android:orientation="horizontal">
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_preset_selector"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
+                android:layout_width="125dp"
+                android:layout_height="50dp"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/bg_lcars_pill_button"
+                android:backgroundTint="@color/lcars_classic_blue"
+                android:fontFamily="sans-serif-condensed"
+                android:gravity="bottom|end"
+                android:paddingEnd="16dp"
+                android:paddingBottom="6dp"
+                android:layout_marginEnd="30dp"
+                android:stateListAnimator="@null"
                 android:text="FLAT"
-                android:textAllCaps="true"
-                android:layout_marginEnd="8dp" />
+                android:textColor="#000000"
+                android:textScaleX="0.7"
+                android:textSize="23sp"
+                android:textStyle="bold" />
 
-            <Button
+            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_reset_equalizer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
+                android:layout_width="125dp"
+                android:layout_height="50dp"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/bg_lcars_pill_button"
+                android:backgroundTint="@color/lcars_classic_blue"
+                android:fontFamily="sans-serif-condensed"
+                android:gravity="bottom|end"
+                android:paddingEnd="16dp"
+                android:paddingBottom="6dp"
+                android:stateListAnimator="@null"
                 android:text="RESET"
-                android:textAllCaps="true" />
+                android:textColor="#000000"
+                android:textScaleX="0.7"
+                android:textSize="23sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </RelativeLayout>
 

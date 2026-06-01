@@ -176,21 +176,24 @@ class LcarsFrame @JvmOverloads constructor(
         post {
             frameAnimator?.cancel()
 
-            // Calculate the exact distance to slide flush against the right column
-            val slideDistance = contentContainer.width.toFloat()
-            val leftSideViews = listOf(
+            val leftSideViews = listOfNotNull(
                 findViewById<View>(R.id.corner_tl),
                 findViewById<View>(R.id.left_column),
                 findViewById<View>(R.id.corner_bl)
             )
 
-            // 1. Force Initial "Closed" State
-            leftSideViews.forEach { it.translationX = slideDistance }
+            // Calculate the rigid start position
+            val leftCorner = findViewById<View>(R.id.corner_tl)
+            val rightCorner = findViewById<View>(R.id.corner_tr)
+            val rigidSlideDistance = (width - (leftCorner?.width ?: 0) - (rightCorner?.width ?: 0)).toFloat()
+
+            // 1. Force Initial "Closed" State using the rigid distance
+            leftSideViews.forEach { it.translationX = rigidSlideDistance }
             contentContainer.alpha = 0f
 
             // 2. Slide Left (Open Door)
             val openAnimations = leftSideViews.map { view ->
-                ObjectAnimator.ofFloat(view, "translationX", slideDistance, 0f).setDuration(500)
+                ObjectAnimator.ofFloat(view, "translationX", rigidSlideDistance, 0f).setDuration(500)
             }
             val openSet = AnimatorSet().apply { playTogether(openAnimations) }
 
@@ -213,8 +216,7 @@ class LcarsFrame @JvmOverloads constructor(
         post {
             frameAnimator?.cancel()
 
-            val slideDistance = contentContainer.width.toFloat()
-            val leftSideViews = listOf(
+            val leftSideViews = listOfNotNull(
                 findViewById<View>(R.id.corner_tl),
                 findViewById<View>(R.id.left_column),
                 findViewById<View>(R.id.corner_bl)
@@ -225,23 +227,28 @@ class LcarsFrame @JvmOverloads constructor(
                 duration = 500
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
-                        // SAFE ZONE: The view is completely transparent.
-                        // We trigger your UI logic here to swap the bitmap or load the Federation fallback.
                         updateMediaArt()
                     }
                 })
             }
 
-            // 2. Slide Right (Close Door)
+            // 2. Slide Right (Close Door) AS A RIGID UNIT
+            // We calculate a single distance based on the widest points (the corners)
+            // so the entire door stops exactly when the corners touch.
+            val leftCorner = findViewById<View>(R.id.corner_tl)
+            val rightCorner = findViewById<View>(R.id.corner_tr)
+
+            val rigidSlideDistance = (width - (leftCorner?.width ?: 0) - (rightCorner?.width ?: 0)).toFloat()
+
             val closeAnimations = leftSideViews.map { view ->
-                // Uses view.translationX as the start point to prevent snapping if interrupted
-                ObjectAnimator.ofFloat(view, "translationX", view.translationX, slideDistance).setDuration(500)
+                // Every single left view receives the exact same rigidSlideDistance
+                ObjectAnimator.ofFloat(view, "translationX", view.translationX, rigidSlideDistance).setDuration(500)
             }
             val closeSet = AnimatorSet().apply { playTogether(closeAnimations) }
 
-            // 3. Slide Left (Open Door)
+            // 3. Slide Left (Open Door) - Return smoothly to origin 0f
             val openAnimations = leftSideViews.map { view ->
-                ObjectAnimator.ofFloat(view, "translationX", slideDistance, 0f).setDuration(500)
+                ObjectAnimator.ofFloat(view, "translationX", 0f).setDuration(500)
             }
             val openSet = AnimatorSet().apply { playTogether(openAnimations) }
 
