@@ -260,9 +260,22 @@ class MainActivity : AppCompatActivity() {
             val artist = metadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: "UNKNOWN ARTIST"
             val album = metadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM) ?: "UNKNOWN ALBUM"
 
+            // NEW: Extract the Media ID of the newly playing track
+            val mediaIdString = metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+
             findViewById<TextView>(R.id.tv_song_title)?.text = title
             findViewById<TextView>(R.id.tv_artist_name)?.text = artist
             findViewById<TextView>(R.id.tv_album_name)?.text = album
+
+            // NEW: Tell the SongAdapter to move the LCARS highlight to the new track
+            mediaIdString?.toLongOrNull()?.let { newSongId ->
+                songAdapter.updateHighlight(newSongId)
+
+                // Bonus UI Polish: Auto-scroll the library view so the newly highlighted song doesn't get lost off-screen
+                if (layoutLibrary.visibility == View.VISIBLE) {
+                    scrollToActiveSongSmoothly()
+                }
+            }
 
             updateMetricsUI()
 
@@ -641,7 +654,10 @@ class MainActivity : AppCompatActivity() {
                 layoutLibrary.visibility = View.VISIBLE
                 animateLibraryEntry() // Trigger the LCARS data cascade
             }
-            "PLAYLIST" -> layoutPlaylist.visibility = View.VISIBLE
+            "PLAYLIST" -> {
+                layoutPlaylist.visibility = View.VISIBLE
+                animatePlaylistEntry() // Trigger the staggered playlist sequence
+            }
             "EQUALIZER" -> {
                 layoutEqualizer.visibility = View.VISIBLE
                 setupEqualizerUI()
@@ -709,16 +725,18 @@ class MainActivity : AppCompatActivity() {
 
         // Scan Buttons
         val btnScanDevice = layoutLibrary.findViewById<Button>(R.id.btn_scan_device)
+        val btnScanPlaylists = layoutPlaylist.findViewById<Button>(R.id.btn_scan_playlists)
 
-        // Capture the XML default color and apply the dynamic touch listener
-        captureDefaultBackgroundTints(btnScanDevice)
+        // Capture the XML default color and apply the dynamic touch listener for both
+        captureDefaultBackgroundTints(btnScanDevice, btnScanPlaylists)
         applyTouchEffect(btnScanDevice, R.color.lcars_classic_blue_dark)
+        applyTouchEffect(btnScanPlaylists, R.color.lcars_classic_blue_dark)
 
         btnScanDevice.setOnClickListener {
             performScan()
         }
 
-        layoutPlaylist.findViewById<Button>(R.id.btn_scan_playlists).setOnClickListener {
+        btnScanPlaylists.setOnClickListener {
             performScan()
         }
     }
@@ -1568,6 +1586,34 @@ class MainActivity : AppCompatActivity() {
                 .setStartDelay(initialDelay + (100L * index)) // Wait 300ms, then add 100ms per row
                 .start()
         }
+    }
+
+    private fun animatePlaylistEntry() {
+        val header = layoutPlaylist.findViewById<View>(R.id.playlist_header_container)
+
+        // 1. Hide everything initially
+        header.alpha = 0f
+        rvPlaylistList.visibility = View.INVISIBLE // Hide the list while header animates
+
+        // 2. Fade in Header (500ms)
+        header.animate().alpha(1f).setDuration(500).withEndAction {
+
+            // 3. Make the container visible right as the staggered pop-in begins
+            rvPlaylistList.visibility = View.VISIBLE
+
+            // Note: Make sure R.anim.item_fade_in is the 10ms animation we created earlier!
+            val animation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.item_slide_down)
+            val controller = android.view.animation.LayoutAnimationController(animation).apply {
+                // 10ms duration * 10.0f delay multiplier = exactly 100ms stagger per row
+                delay = 10.0f
+                order = android.view.animation.LayoutAnimationController.ORDER_NORMAL
+            }
+
+            rvPlaylistList.layoutAnimation = controller
+            rvPlaylistList.adapter?.notifyDataSetChanged()
+            rvPlaylistList.scheduleLayoutAnimation()
+
+        }.start()
     }
 
     private fun terminateApp() {
