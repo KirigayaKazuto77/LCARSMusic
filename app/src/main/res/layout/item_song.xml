@@ -23,7 +23,7 @@
         android:id="@+id/tv_item_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="5"
         android:layout_marginStart="30dp"
         android:text="SONG TITLE"
         android:textAllCaps="true"
@@ -38,13 +38,16 @@
         android:id="@+id/tv_item_artist"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_weight="2"
+        android:layout_marginStart="20dp"
         android:text="ARTIST NAME"
         android:textAllCaps="true"
         android:textSize="25sp"
         android:textScaleX="0.7"
         android:textStyle="bold"
-        android:textColor="@color/lcars_nemesis_evening" />
+        android:textColor="@color/lcars_nemesis_evening"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
     <TextView
         android:id="@+id/tv_item_duration"

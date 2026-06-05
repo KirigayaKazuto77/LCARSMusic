@@ -260,14 +260,20 @@ class MainActivity : AppCompatActivity() {
             val artist = metadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: "UNKNOWN ARTIST"
             val album = metadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM) ?: "UNKNOWN ALBUM"
 
-            // NEW: Extract the Media ID of the newly playing track
+            // NEW: Extract the Playlist Name passed from the service as the subtitle
+            val playlist = metadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE) ?: "ALL SONGS"
+
+            // Extract the Media ID of the newly playing track
             val mediaIdString = metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
 
             findViewById<TextView>(R.id.tv_song_title)?.text = title
             findViewById<TextView>(R.id.tv_artist_name)?.text = artist
             findViewById<TextView>(R.id.tv_album_name)?.text = album
 
-            // NEW: Tell the SongAdapter to move the LCARS highlight to the new track
+            // NEW: Push the updated playlist name to the UI, maintaining the LCARS prefix format
+            findViewById<TextView>(R.id.tv_playlist_name)?.text = "PLAYLIST: ${playlist.uppercase()}"
+
+            // Tell the SongAdapter to move the LCARS highlight to the new track
             mediaIdString?.toLongOrNull()?.let { newSongId ->
                 songAdapter.updateHighlight(newSongId)
 
