@@ -259,19 +259,27 @@ class MainActivity : AppCompatActivity() {
             val title = metadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE) ?: "UNKNOWN TITLE"
             val artist = metadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST) ?: "UNKNOWN ARTIST"
             val album = metadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM) ?: "UNKNOWN ALBUM"
-
-            // NEW: Extract the Playlist Name passed from the service as the subtitle
             val playlist = metadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE) ?: "ALL SONGS"
-
-            // Extract the Media ID of the newly playing track
             val mediaIdString = metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+
+            // NEW: Extract the duration and name it trackDuration to avoid animation scope conflicts
+            val trackDuration = metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
 
             findViewById<TextView>(R.id.tv_song_title)?.text = title
             findViewById<TextView>(R.id.tv_artist_name)?.text = artist
             findViewById<TextView>(R.id.tv_album_name)?.text = album
-
-            // NEW: Push the updated playlist name to the UI, maintaining the LCARS prefix format
             findViewById<TextView>(R.id.tv_playlist_name)?.text = "PLAYLIST: ${playlist.uppercase()}"
+
+            // NEW: Update the Seekbar's max boundary and the Duration TextViews using trackDuration
+            val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
+            if (seekBar != null) {
+                seekBar.max = trackDuration.toInt()
+                seekBar.progress = 0 // Snap back to 0 visually
+            }
+
+            findViewById<TextView>(R.id.tv_track_duration)?.text = MediaScanner.formatDuration(trackDuration)
+            findViewById<TextView>(R.id.tv_remaining_time)?.text = "- ${MediaScanner.formatDuration(trackDuration)}"
+            findViewById<TextView>(R.id.tv_playback_time)?.text = MediaScanner.formatDuration(0L)
 
             // Tell the SongAdapter to move the LCARS highlight to the new track
             mediaIdString?.toLongOrNull()?.let { newSongId ->
@@ -340,7 +348,8 @@ class MainActivity : AppCompatActivity() {
                 seekBar.progress = currentPosition.toInt()
 
                 val trackDuration = seekBar.max.toLong()
-                val remaining = trackDuration - currentPosition
+                // CLAMP TO 0: Prevents negative time overflow at the end of a track
+                val remaining = maxOf(0L, trackDuration - currentPosition)
 
                 findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(currentPosition)
                 findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(remaining)}"
@@ -847,7 +856,15 @@ class MainActivity : AppCompatActivity() {
 
             val seekBar = findViewById<SeekBar>(R.id.playback_seekbar)
             seekBar.max = song.duration.toInt()
+
+            // NEW: Force the seekbar playhead back to 0
+            seekBar.progress = 0
+
             findViewById<TextView>(R.id.tv_track_duration).text = MediaScanner.formatDuration(song.duration)
+
+            // NEW: Overwrite the XML dummy text with the actual track time
+            findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(0L)
+            findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(song.duration)}"
         }
     }
 
@@ -950,7 +967,8 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     val trackDuration = seekBar?.max?.toLong() ?: 0L
-                    val remaining = trackDuration - progress.toLong()
+                    // CLAMP TO 0: Prevents negative values if the user scrubs past the extreme end
+                    val remaining = maxOf(0L, trackDuration - progress.toLong())
 
                     findViewById<TextView>(R.id.tv_playback_time).text = MediaScanner.formatDuration(progress.toLong())
                     findViewById<TextView>(R.id.tv_remaining_time).text = "- ${MediaScanner.formatDuration(remaining)}"
