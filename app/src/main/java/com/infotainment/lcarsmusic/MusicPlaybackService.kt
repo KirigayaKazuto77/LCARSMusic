@@ -211,7 +211,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun initializeEqualizerForSession(sessionId: Int) {
-        if (sessionId <= 0) return
+        if (sessionId < 0) return
 
         audioEffectHandler.post {
             if (latestAudioSessionId != sessionId) {
@@ -232,6 +232,11 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         playbackStateManager = PlaybackStateManager(this)
         initializeMediaPlayer()
         
+        latestAudioSessionId = mediaPlayer?.audioSessionId ?: 0
+        if (latestAudioSessionId >= 0) {
+            initializeEqualizerForSession(latestAudioSessionId)
+        }
+
         mediaSession = MediaSessionCompat(this, "MusicPlaybackService").apply {
             setCallback(mediaSessionCallback)
             isActive = true

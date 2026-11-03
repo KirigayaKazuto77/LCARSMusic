@@ -18,7 +18,7 @@ object EqualizerEngine {
 
     @Synchronized
     fun initialize(sessionId: Int): Equalizer? {
-        if (sessionId <= 0) {
+        if (sessionId < 0) {
             Log.w(TAG, "EQUALIZER_INIT_SKIPPED_INVALID_SESSION sessionId=$sessionId")
             return null
         }

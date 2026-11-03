@@ -146,7 +146,13 @@ class MainActivity : AppCompatActivity() {
             "PERMISSION_RESULT_RECORD_AUDIO granted=$hasRecordAudio"
         )
 
-        if (permissions.all { it.value }) {
+        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (storageGranted) {
             initializeContent()
         } else {
             Toast.makeText(this, "PERMISSIONS REQUIRED FOR FULL FUNCTIONALITY", Toast.LENGTH_LONG).show()
@@ -501,6 +507,8 @@ class MainActivity : AppCompatActivity() {
                 
                 isMediaLoaded = true
                 checkAndRehydrate()
+            } else {
+                performScan()
             }
             
             switchView("NOW PLAYING")
@@ -761,6 +769,7 @@ class MainActivity : AppCompatActivity() {
             allSongs = MediaScanner.scanDevice(this@MainActivity)
             val folders = allSongs.map { it.folderName }.distinct().sorted()
             playlistAdapter.updateFolders(folders)
+            updateLibraryView()
             updateMetricsUI()
             
             isMediaLoaded = true
@@ -1050,33 +1059,26 @@ class MainActivity : AppCompatActivity() {
         val btnPreset = layoutEqualizer.findViewById<Button>(R.id.btn_preset_selector)
         val btnReset = layoutEqualizer.findViewById<Button>(R.id.btn_reset_equalizer)
         val bandsContainer = layoutEqualizer.findViewById<LinearLayout>(R.id.equalizerBandsContainer)
-        val equalizer = EqualizerEngine.activeEqualizer
+
+        var equalizer = EqualizerEngine.activeEqualizer
+        if (equalizer == null && latestVisualizerSessionId >= 0) {
+            equalizer = EqualizerEngine.initialize(latestVisualizerSessionId)
+        }
 
         if (equalizer == null) {
-            bandsContainer.removeAllViews()
-            equalizerBandViews.clear()
-            currentSelectedPresetIndex = sharedPreferences.getInt(
-                PREF_EQUALIZER_SELECTED_PRESET_INDEX,
-                FLAT_PRESET_INDEX
-            )
-            btnPreset.text = if (currentSelectedPresetIndex == CUSTOM_PRESET_INDEX) "CUSTOM" else "FLAT"
-            btnPreset.setOnClickListener { view ->
-                PopupMenu(this, view).apply {
-                    menu.add("FLAT")
-                    show()
-                }
-            }
+            populateFallbackEqualizerBands(bandsContainer, btnPreset)
             btnReset.setOnClickListener {
-                currentSelectedPresetIndex = FLAT_PRESET_INDEX
                 btnPreset.text = "FLAT"
+                currentSelectedPresetIndex = FLAT_PRESET_INDEX
                 sharedPreferences.edit()
                     .putInt(PREF_EQUALIZER_SELECTED_PRESET_INDEX, FLAT_PRESET_INDEX)
                     .remove(PREF_EQUALIZER_BAND_PROGRESS)
                     .apply()
+                populateFallbackEqualizerBands(bandsContainer, btnPreset)
             }
             Log.d(
                 MusicPlaybackService.VISUALIZER_LOG_TAG,
-                "EQUALIZER_UI_ENGINE_UNAVAILABLE sessionId=${EqualizerEngine.activeSessionId}"
+                "EQUALIZER_UI_FALLBACK_RENDERED sessionId=${EqualizerEngine.activeSessionId}"
             )
             return
         }
@@ -1145,6 +1147,79 @@ class MainActivity : AppCompatActivity() {
         }
 
         return presets
+    }
+
+    private fun populateFallbackEqualizerBands(
+        bandsContainer: LinearLayout,
+        presetButton: Button
+    ) {
+        bandsContainer.removeAllViews()
+        equalizerBandViews.clear()
+
+        val frequencies = intArrayOf(60000, 230000, 910000, 3600000, 14000000)
+        val dummyRange = shortArrayOf(-1500, 1500)
+
+        for (i in frequencies.indices) {
+            val band = i.toShort()
+            val levelLabel = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dpToPx(4)
+                }
+                text = "0 dB"
+                setTextColor(Color.WHITE)
+                textSize = 12f
+            }
+
+            val seekBar = SegmentedSeekBar(this).apply {
+                layoutParams = LinearLayout.LayoutParams(dpToPx(48), 0, 1f)
+                progress = 50f
+                segmentCount = 12
+                activeColor = Color.parseColor("#04AA6D")
+                inactiveColor = Color.parseColor("#1A3D2A")
+                thumbColor = Color.WHITE
+                onProgressChangedListener = { newProgress, fromUser ->
+                    if (fromUser) {
+                        val level = progressToMillibels(newProgress, dummyRange)
+                        levelLabel.text = formatBandLevel(level)
+                        currentSelectedPresetIndex = CUSTOM_PRESET_INDEX
+                        presetButton.text = "CUSTOM"
+                        saveEqualizerState()
+                    }
+                }
+            }
+
+            val frequencyLabel = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = dpToPx(4)
+                }
+                text = formatCenterFrequency(frequencies[i])
+                setTextColor(Color.parseColor("#AAAAAA"))
+                textSize = 12f
+            }
+
+            equalizerBandViews.add(EqualizerBandView(band, levelLabel, seekBar))
+
+            val bandLayout = LinearLayout(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                ).apply {
+                    marginEnd = dpToPx(24)
+                }
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                addView(levelLabel)
+                addView(seekBar)
+                addView(frequencyLabel)
+            }
+            bandsContainer.addView(bandLayout)
+        }
     }
 
     private fun populateEqualizerBands(
